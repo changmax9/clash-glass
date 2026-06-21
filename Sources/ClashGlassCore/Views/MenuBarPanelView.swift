@@ -58,7 +58,7 @@ public struct MenuBarPanelView: View {
                         .controlSize(.small)
                 } else {
                     LiquidIconButton(
-                        title: "Refresh Nodes and Latency",
+                        title: store.text(.refresh),
                         symbol: "arrow.clockwise",
                         size: 30
                     ) {
@@ -91,9 +91,9 @@ public struct MenuBarPanelView: View {
 
     private var mainVPNDetail: String {
         guard store.isStarted else {
-            return "Stopped"
+            return store.text(.stopped)
         }
-        return store.isSystemProxyEnabled ? "Connected" : "Core Running"
+        return store.isSystemProxyEnabled ? store.text(.connected) : store.text(.coreRunning)
     }
 
     private func nodeSection(palette: GlassPalette) -> some View {
@@ -103,7 +103,7 @@ public struct MenuBarPanelView: View {
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .lineLimit(1)
                 Spacer()
-                Text("\(store.menuBarProxyNodes.count) nodes")
+                Text("\(store.menuBarProxyNodes.count) \(store.text(.nodes))")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(palette.tertiaryText)
             }
@@ -112,7 +112,7 @@ public struct MenuBarPanelView: View {
 
             MenuBarPanelSurface(radius: 18, padding: 6) {
                 if store.menuBarProxyNodes.isEmpty {
-                    Text("No Proxy Nodes Available")
+                    Text(store.text(.noProxyNodes))
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.secondaryText)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

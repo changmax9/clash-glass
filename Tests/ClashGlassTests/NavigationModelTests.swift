@@ -16,13 +16,100 @@ import Testing
     ])
 }
 
-@Test func settingsEndsWithAnAboutDisclaimerSection() {
-    #expect(SettingsSection.allCases.last == .about)
+@Test func settingsUsesOnePageWithOnlyRequestedGroups() {
+    #expect(SettingsPagePolicy.usesSinglePage)
+    #expect(!SettingsPagePolicy.showsSectionTabs)
+    #expect(SettingsPagePolicy.groups == [
+        .appearance,
+        .language,
+        .about,
+    ])
     #expect(ApplicationDisclaimer.purpose.contains("educational"))
     #expect(ApplicationDisclaimer.purpose.contains("research"))
     #expect(ApplicationDisclaimer.responsibility.contains("applicable laws"))
     #expect(ApplicationDisclaimer.liability.contains("provided \"as is\""))
     #expect(ApplicationDisclaimer.liability.contains("not liable"))
+}
+
+@Test func appSupportsRequestedInterfaceLanguages() {
+    #expect(AppLanguage.selectableCases == [
+        .system,
+        .english,
+        .simplifiedChinese,
+        .traditionalChinese,
+        .japanese,
+        .french,
+        .russian,
+        .spanish,
+        .portuguese,
+    ])
+
+    for language in AppLanguage.selectableCases where language != .system {
+        #expect(!language.text(.settings).isEmpty)
+        #expect(!language.text(.appearance).isEmpty)
+        #expect(!language.text(.language).isEmpty)
+        #expect(!language.text(.about).isEmpty)
+        #expect(!language.text(.update).isEmpty)
+        for key in AppString.allCases {
+            #expect(
+                AppLocalization.hasTranslation(key, language: language),
+                "Missing \(key.rawValue) in \(language.rawValue)"
+            )
+        }
+    }
+
+    #expect(AppLanguage.simplifiedChinese.text(.settings) == "设置")
+    #expect(AppLanguage.traditionalChinese.text(.settings) == "設定")
+    #expect(AppLanguage.japanese.text(.settings) == "設定")
+    #expect(AppLanguage.french.text(.settings) == "Réglages")
+    #expect(AppLanguage.russian.text(.settings) == "Настройки")
+    #expect(AppLanguage.spanish.text(.settings) == "Ajustes")
+    #expect(AppLanguage.portuguese.text(.settings) == "Definições")
+}
+
+@Test func systemAppearanceResolvesFromTheLiveMacOSScheme() {
+    #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .light) == .light)
+    #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .dark) == .dark)
+    #expect(AppAppearance.light.resolvedColorScheme(systemColorScheme: .dark) == .light)
+    #expect(AppAppearance.dark.resolvedColorScheme(systemColorScheme: .light) == .dark)
+}
+
+@Test func updateCapsuleDefersToSparkleForDownloadedOrVisibleUpdates() {
+    #expect(UpdateReminderPolicy.shouldShowCapsule(
+        standardDriverWillShowUpdate: false,
+        updateIsNotDownloaded: true
+    ))
+    #expect(!UpdateReminderPolicy.shouldShowCapsule(
+        standardDriverWillShowUpdate: true,
+        updateIsNotDownloaded: true
+    ))
+    #expect(!UpdateReminderPolicy.shouldShowCapsule(
+        standardDriverWillShowUpdate: false,
+        updateIsNotDownloaded: false
+    ))
+}
+
+@MainActor
+@Test func appStorePersistsTheSelectedLanguage() throws {
+    let suiteName = "ClashGlassTests-\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let rootURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: rootURL) }
+
+    let store = AppStore(
+        profileRepository: ManagedProfileRepository(rootURL: rootURL),
+        userDefaults: defaults
+    )
+    store.language = .japanese
+
+    let restored = AppStore(
+        profileRepository: ManagedProfileRepository(rootURL: rootURL),
+        userDefaults: defaults
+    )
+    #expect(restored.language == .japanese)
 }
 
 @MainActor

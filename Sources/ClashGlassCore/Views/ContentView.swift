@@ -125,7 +125,7 @@ private struct IconRail: View {
                     hoverState.update(item: item, isHovering: hovering)
                 }
                 .animation(.spring(response: 0.28, dampingFraction: 0.72), value: presentation.isHovered)
-                .help(section.title)
+                .help(store.text(section.titleKey))
             }
 
             Spacer()
@@ -168,7 +168,7 @@ private struct MainStage: View {
         VStack(alignment: .leading, spacing: 28) {
             HStack(alignment: .center) {
                 ZStack(alignment: .leading) {
-                    Text(store.selectedSection.title)
+                    Text(store.text(store.selectedSection.titleKey))
                         .font(.system(size: 23, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.primaryText)
                         .lineLimit(1)
@@ -185,7 +185,8 @@ private struct MainStage: View {
                 HStack(spacing: 18) {
                     CoreStatusToolbarButton(
                         symbol: coreStatusSymbol,
-                        isRunning: store.isCoreRunning
+                        isRunning: store.isCoreRunning,
+                        accessibilityTitle: store.text(.coreStatus)
                     ) {
                         showsCoreRestartConfirmation = true
                     }
@@ -199,14 +200,14 @@ private struct MainStage: View {
 
                         AppKitMenuButton(entries: [
                             .item(
-                                "Rename Current Profile",
+                                store.text(.renameProfile),
                                 symbol: "pencil",
                                 isEnabled: store.selectedManagedProfile != nil
                             ) {
                                 beginRenamingSelectedProfile()
                             },
                             .item(
-                                "Validate Current Profile",
+                                store.text(.validate),
                                 symbol: "checkmark.shield",
                                 isEnabled: store.selectedManagedProfile != nil
                             ) {
@@ -218,7 +219,7 @@ private struct MainStage: View {
                                 }
                             },
                             .item(
-                                "Reveal Current YAML",
+                                store.text(.revealInFinder),
                                 symbol: "folder",
                                 isEnabled: store.selectedManagedProfile != nil
                             ) {
@@ -229,18 +230,18 @@ private struct MainStage: View {
                             },
                             .separator,
                             .item(
-                                "Open Routing Rules",
+                                store.text(.routing),
                                 symbol: "point.3.connected.trianglepath.dotted"
                             ) {
                                 store.selectedSection = .routing
                             },
                             .item(
-                                "Open Profile Manager",
+                                store.text(.profiles),
                                 symbol: "folder.fill"
                             ) {
                                 store.selectedSection = .profiles
                             },
-                        ])
+                        ], accessibilityTitle: store.text(.quickEdit))
                         .frame(
                             width: CGFloat(ToolbarControlMetrics.hitTarget),
                             height: CGFloat(ToolbarControlMetrics.hitTarget)
@@ -250,9 +251,9 @@ private struct MainStage: View {
                         width: CGFloat(ToolbarControlMetrics.hitTarget),
                         height: CGFloat(ToolbarControlMetrics.hitTarget)
                     )
-                    .help("Quick Edit")
+                    .help(store.text(.quickEdit))
                     .accessibilityElement(children: .contain)
-                    .accessibilityLabel("Quick Edit")
+                    .accessibilityLabel(store.text(.quickEdit))
                 }
             }
             .frame(width: CGFloat(layout.stageWidth), height: 36)
@@ -281,25 +282,25 @@ private struct MainStage: View {
         .padding(.leading, CGFloat(layout.contentLeadingInset))
         .padding(.trailing, CGFloat(layout.contentTrailingInset))
         .confirmationDialog(
-            "Restart Core?",
+            store.isCoreRunning ? store.text(.restartCore) : store.text(.startCore),
             isPresented: $showsCoreRestartConfirmation,
             titleVisibility: .visible
         ) {
-            Button(store.isCoreRunning ? "Restart Core" : "Start Core") {
+            Button(store.isCoreRunning ? store.text(.restartCore) : store.text(.startCore)) {
                 Task {
                     await store.restartCore()
                 }
             }
-            Button("Cancel", role: .cancel) {}
+            Button(store.text(.cancel), role: .cancel) {}
         } message: {
             Text(coreRestartMessage)
         }
-        .alert("Rename Profile", isPresented: $showsProfileRename) {
-            TextField("Profile Name", text: $renameDraft)
-            Button("Cancel", role: .cancel) {
+        .alert(store.text(.renameProfile), isPresented: $showsProfileRename) {
+            TextField(store.text(.profileName), text: $renameDraft)
+            Button(store.text(.cancel), role: .cancel) {
                 renameProfileID = nil
             }
-            Button("Rename") {
+            Button(store.text(.rename)) {
                 guard let renameProfileID else { return }
                 store.renameManagedProfile(renameProfileID, to: renameDraft)
                 self.renameProfileID = nil
@@ -394,7 +395,7 @@ private struct StartFloatingButton: View {
             hoverScale: 1.075,
             pressedScale: 0.91
         ))
-        .help(store.isStarted ? "Pause" : "Start")
+        .help(store.isStarted ? store.text(.pause) : store.text(.start))
         .animation(.spring(response: 0.36, dampingFraction: 0.72), value: store.isStarted)
         .animation(.spring(response: 0.36, dampingFraction: 0.72), value: store.coreStatus)
     }

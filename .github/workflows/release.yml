@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve dependencies
+        run: swift package resolve
+
+      - name: Build signed update assets
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          chmod +x script/build_and_run.sh script/package_release.sh
+          ./script/package_release.sh "$version"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/ClashGlass-$version.dmg" \
+            "dist/appcast.xml" \
+            --title "Clash Glass $version" \
+            --generate-notes

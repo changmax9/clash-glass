@@ -11,7 +11,7 @@ struct RoutingView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Routing",
+            placeholder: "\(store.text(.search)) \(store.text(.routing))",
             actions: []
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -20,8 +20,8 @@ struct RoutingView: View {
                 if filteredOverrides.isEmpty {
                     EmptyGlassState(
                         title: store.routingOverrides.isEmpty
-                            ? "Add a domain to choose VPN or Direct routing"
-                            : "No Matching Routing Rules",
+                            ? store.text(.addDomainHint)
+                            : store.text(.noMatchingRoutingRules),
                         symbol: "arrow.triangle.branch"
                     )
                 } else {
@@ -37,7 +37,7 @@ struct RoutingView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Domain Routing")
+                        Text(store.text(.domainRouting))
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                         Text(
                             store.selectedManagedProfile.map {
@@ -77,10 +77,10 @@ struct RoutingView: View {
                     PillSegment(
                         values: RoutingPolicy.allCases,
                         selection: $policy
-                    ) { $0.title }
+                    ) { $0 == .vpn ? "VPN" : store.text(.direct) }
 
                     LiquidActionButton(
-                        title: isSaving ? "Saving" : "Add Rule",
+                        title: isSaving ? store.text(.saving) : store.text(.addRule),
                         symbol: isSaving ? "hourglass" : "plus"
                     ) {
                         addRule()
@@ -103,7 +103,10 @@ struct RoutingView: View {
         GlassCard(radius: 16, padding: 0) {
             VStack(spacing: 0) {
                 ForEach(filteredOverrides) { routingOverride in
-                    RoutingOverrideRow(routingOverride: routingOverride) {
+                    RoutingOverrideRow(
+                        routingOverride: routingOverride,
+                        language: store.language
+                    ) {
                         Task {
                             await store.removeRoutingOverride(domain: routingOverride.domain)
                         }
@@ -144,6 +147,7 @@ struct RoutingView: View {
 
 private struct RoutingOverrideRow: View {
     let routingOverride: RoutingOverride
+    let language: AppLanguage
     let delete: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
@@ -157,18 +161,20 @@ private struct RoutingOverrideRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(routingOverride.domain)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                Text("DOMAIN-SUFFIX → \(routingOverride.policy.title)")
+                Text(
+                    "DOMAIN-SUFFIX → \(routingOverride.policy == .vpn ? "VPN" : language.text(.direct))"
+                )
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(palette.tertiaryText)
             }
             Spacer()
             StatusChip(
-                text: routingOverride.policy.title,
+                text: routingOverride.policy == .vpn ? "VPN" : language.text(.direct),
                 symbol: routingOverride.policy == .vpn ? "network.badge.shield.half.filled" : nil,
                 tint: routingOverride.policy == .vpn ? palette.rose : palette.green
             )
             LiquidIconButton(
-                title: "Delete Rule",
+                title: language.text(.deleteRule),
                 symbol: "trash",
                 tint: .red.opacity(0.16),
                 size: 28,

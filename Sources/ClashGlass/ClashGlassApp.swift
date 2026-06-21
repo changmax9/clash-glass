@@ -1,5 +1,6 @@
 import AppKit
 import ClashGlassCore
+import Sparkle
 import SwiftUI
 
 @main
@@ -10,7 +11,12 @@ struct ClashGlassApp: App {
     var body: some Scene {
         WindowGroup("Clash Glass", id: "main") {
             ContentView(store: store)
-                .preferredColorScheme(store.appearanceMode.colorScheme)
+                .preferredColorScheme(
+                    store.appearanceMode.resolvedColorScheme(
+                        systemColorScheme: appDelegate.systemAppearanceMonitor.colorScheme
+                    )
+                )
+                .environment(\.locale, store.language.locale)
                 .task {
                     appDelegate.store = store
                     if let section = ProcessInfo.processInfo.environment["CLASH_GLASS_SECTION"],
@@ -27,15 +33,27 @@ struct ClashGlassApp: App {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+    let systemAppearanceMonitor = SystemAppearanceMonitor()
     private var windowActivationAttempts = 0
     private var menuBarPanelController: MenuBarPanelController?
+    private var updateAccessoryController: NSTitlebarAccessoryViewController?
+    private var hasPendingUpdateReminder = false
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: self
+    )
     var store: AppStore? {
         didSet {
             guard menuBarPanelController == nil, let store else {
                 return
             }
-            menuBarPanelController = MenuBarPanelController(store: store)
+            menuBarPanelController = MenuBarPanelController(
+                store: store,
+                systemAppearanceMonitor: systemAppearanceMonitor
+            )
+            _ = updaterController
         }
     }
 
@@ -78,7 +96,107 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 window.orderFrontRegardless()
                 window.makeKeyAndOrderFront(nil)
             }
+            if hasPendingUpdateReminder {
+                showUpdateAccessory()
+            }
+            if ProcessInfo.processInfo.environment["CLASH_GLASS_PREVIEW_UPDATE"] == "1" {
+                showUpdateAccessory()
+            }
             NSRunningApplication.current.activate(options: .activateAllWindows)
         }
+    }
+
+    var supportsGentleScheduledUpdateReminders: Bool {
+        true
+    }
+
+    func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool,
+        forUpdate update: SUAppcastItem,
+        state: SPUUserUpdateState
+    ) {
+        if UpdateReminderPolicy.shouldShowCapsule(
+            standardDriverWillShowUpdate: handleShowingUpdate,
+            updateIsNotDownloaded: state.stage == .notDownloaded
+        ) {
+            hasPendingUpdateReminder = true
+            showUpdateAccessory()
+        } else {
+            hasPendingUpdateReminder = false
+            removeUpdateAccessory()
+        }
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        hasPendingUpdateReminder = false
+        removeUpdateAccessory()
+    }
+
+    private func showUpdateAccessory() {
+        guard updateAccessoryController == nil, let store else {
+            return
+        }
+        guard let window = NSApp.windows.first(where: {
+            $0.canBecomeKey && !($0 is NSPanel)
+        }) else {
+            return
+        }
+
+        let accessory = NSTitlebarAccessoryViewController()
+        accessory.layoutAttribute = .left
+        let hostingView = NSHostingView(
+            rootView: UpdateTitlebarCapsule(store: store) { [weak self] in
+                self?.updaterController.checkForUpdates(nil)
+            }
+        )
+        hostingView.frame.size = hostingView.fittingSize
+        accessory.view = hostingView
+        window.addTitlebarAccessoryViewController(accessory)
+        updateAccessoryController = accessory
+    }
+
+    private func removeUpdateAccessory() {
+        guard let updateAccessoryController else {
+            return
+        }
+        if let window = updateAccessoryController.view.window,
+           let index = window.titlebarAccessoryViewControllers.firstIndex(
+               where: { $0 === updateAccessoryController }
+           ) {
+            window.removeTitlebarAccessoryViewController(at: index)
+        } else {
+            updateAccessoryController.view.removeFromSuperview()
+        }
+        self.updateAccessoryController = nil
+    }
+}
+
+private struct UpdateTitlebarCapsule: View {
+    @Bindable var store: AppStore
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.down.circle.fill")
+                Text(store.text(.update))
+            }
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .padding(.horizontal, 11)
+            .frame(height: 25)
+            .background(.regularMaterial, in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .strokeBorder(.primary.opacity(isHovering ? 0.20 : 0.10))
+            }
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isHovering ? 1.04 : 1)
+        .onHover { isHovering = $0 }
+        .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isHovering)
+        .padding(.leading, 4)
+        .padding(.vertical, 3)
+        .help(store.text(.update))
     }
 }

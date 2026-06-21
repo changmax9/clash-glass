@@ -8,14 +8,14 @@ struct ConnectionsView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Connections",
+            placeholder: "\(store.text(.search)) \(store.text(.connections))",
             actions: [
-                .init(title: "Close All", symbol: "trash") {
+                .init(title: store.text(.closeAll), symbol: "trash") {
                     Task {
                         await store.closeAllConnections()
                     }
                 },
-                .init(title: "Refresh", symbol: "arrow.clockwise") {
+                .init(title: store.text(.refresh), symbol: "arrow.clockwise") {
                     Task {
                         await store.refreshConnections()
                     }
@@ -23,14 +23,18 @@ struct ConnectionsView: View {
             ]
         ) {
             if filteredConnections.isEmpty {
-                EmptyGlassState(title: "No Connections", symbol: "network.slash")
+                EmptyGlassState(title: store.text(.noConnections), symbol: "network.slash")
             } else {
                 GlassCard(radius: 16, padding: 0) {
                     VStack(spacing: 0) {
-                        ConnectionHeader()
+                        ConnectionHeader(language: store.language)
                         Divider().opacity(0.16)
                         ForEach(filteredConnections) { connection in
-                            ConnectionRow(connection: connection, showsBlock: true) {
+                            ConnectionRow(
+                                connection: connection,
+                                showsBlock: true,
+                                closeTitle: store.text(.closeConnection)
+                            ) {
                                 Task {
                                     await store.closeConnection(connection)
                                 }
@@ -59,14 +63,16 @@ struct ConnectionsView: View {
 }
 
 private struct ConnectionHeader: View {
+    let language: AppLanguage
+
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
             GridRow {
-                HeaderText("Host")
-                HeaderText("Rule")
-                HeaderText("Chain")
-                HeaderText("Upload")
-                HeaderText("Download")
+                HeaderText(language.text(.host))
+                HeaderText(language.text(.rule))
+                HeaderText(language.text(.chain))
+                HeaderText(language.text(.upload))
+                HeaderText(language.text(.download))
                 HeaderText("")
             }
             .padding(.horizontal, 16)
@@ -78,6 +84,7 @@ private struct ConnectionHeader: View {
 struct ConnectionRow: View {
     let connection: ConnectionEntry
     let showsBlock: Bool
+    var closeTitle = "Close Connection"
     var closeAction: (() -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
@@ -103,7 +110,7 @@ struct ConnectionRow: View {
                     .lineLimit(1)
                 if showsBlock {
                     LiquidIconButton(
-                        title: "Close Connection",
+                        title: closeTitle,
                         symbol: "xmark",
                         tint: .red.opacity(0.14),
                         size: 24

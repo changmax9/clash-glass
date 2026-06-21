@@ -2,6 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-run}"
+BUILD_CONFIGURATION="${BUILD_CONFIGURATION:-debug}"
 APP_NAME="ClashGlass"
 BUNDLE_ID="com.maxchang.ClashGlass"
 MIN_SYSTEM_VERSION="15.0"
@@ -13,12 +14,16 @@ APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
 APP_RESOURCES="$APP_CONTENTS/Resources"
+APP_FRAMEWORKS="$APP_CONTENTS/Frameworks"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 CORE_BINARY="$ROOT_DIR/core/mihomo"
 GEO_DATA_SOURCE="$ROOT_DIR/runtime-assets"
 GEO_DATA_DESTINATION="$APP_RESOURCES/GeoData"
 APP_ICON_SOURCE="$ROOT_DIR/Assets/AppIcon.icns"
+SPARKLE_FRAMEWORK="$ROOT_DIR/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+SPARKLE_FEED_URL="https://github.com/changmax9/clash-glass/releases/latest/download/appcast.xml"
+SPARKLE_PUBLIC_KEY="nNIrqbotaDGgjLrL4Rhx42PoCFiqj04ktB+FidHXvF8="
 
 if pgrep -x "$APP_NAME" >/dev/null 2>&1; then
   /usr/bin/osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
@@ -29,14 +34,24 @@ if pgrep -x "$APP_NAME" >/dev/null 2>&1; then
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 fi
 
-swift build
-BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
+swift build -c "$BUILD_CONFIGURATION"
+BUILD_BINARY="$(swift build -c "$BUILD_CONFIGURATION" --show-bin-path)/$APP_NAME"
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_MACOS"
 mkdir -p "$APP_RESOURCES"
+mkdir -p "$APP_FRAMEWORKS"
 cp "$BUILD_BINARY" "$APP_BINARY"
 chmod +x "$APP_BINARY"
+if [[ -d "$SPARKLE_FRAMEWORK" ]]; then
+  cp -R "$SPARKLE_FRAMEWORK" "$APP_FRAMEWORKS/"
+  /usr/bin/install_name_tool \
+    -add_rpath "@executable_path/../Frameworks" \
+    "$APP_BINARY" 2>/dev/null || true
+else
+  echo "error: Sparkle.framework is missing; run swift package resolve" >&2
+  exit 1
+fi
 if [[ -x "$CORE_BINARY" ]]; then
   cp "$CORE_BINARY" "$APP_RESOURCES/mihomo"
   chmod +x "$APP_RESOURCES/mihomo"
@@ -69,7 +84,7 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundleShortVersionString</key>
   <string>$APP_VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>${APP_BUILD:-1}</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundlePackageType</key>
@@ -82,15 +97,29 @@ cat >"$INFO_PLIST" <<PLIST
   <true/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
+  <key>SUFeedURL</key>
+  <string>$SPARKLE_FEED_URL</string>
+  <key>SUPublicEDKey</key>
+  <string>$SPARKLE_PUBLIC_KEY</string>
+  <key>SUEnableAutomaticChecks</key>
+  <true/>
+  <key>SUAllowsAutomaticUpdates</key>
+  <false/>
+  <key>SUScheduledCheckInterval</key>
+  <integer>86400</integer>
 </dict>
 </plist>
 PLIST
+
+/usr/bin/codesign --force --deep --sign - "$APP_BUNDLE"
 
 open_app() {
   /usr/bin/open -n "$APP_BUNDLE"
 }
 
 case "$MODE" in
+  --stage|stage)
+    ;;
   run)
     open_app
     ;;
@@ -111,7 +140,7 @@ case "$MODE" in
     pgrep -x "$APP_NAME" >/dev/null
     ;;
   *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
+    echo "usage: $0 [run|--stage|--debug|--logs|--telemetry|--verify]" >&2
     exit 2
     ;;
 esac

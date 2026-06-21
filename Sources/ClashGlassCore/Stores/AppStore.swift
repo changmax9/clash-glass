@@ -5,6 +5,7 @@ import SwiftUI
 @Observable
 @MainActor
 public final class AppStore {
+    private let userDefaults: UserDefaults
     private let coreService: MihomoCoreService
     private var apiService: MihomoAPIService
     private let systemProxyService: SystemProxyService
@@ -32,12 +33,17 @@ public final class AppStore {
     public var networkService = "Wi-Fi"
     public var appearanceMode: AppAppearance = .system {
         didSet {
-            UserDefaults.standard.set(appearanceMode.rawValue, forKey: "appearanceMode")
+            userDefaults.set(appearanceMode.rawValue, forKey: "appearanceMode")
+        }
+    }
+    public var language: AppLanguage = .system {
+        didSet {
+            userDefaults.set(language.rawValue, forKey: "language")
         }
     }
     public var reduceMotion = false {
         didSet {
-            UserDefaults.standard.set(reduceMotion, forKey: "reduceMotion")
+            userDefaults.set(reduceMotion, forKey: "reduceMotion")
         }
     }
     public var httpPort = 7890
@@ -81,8 +87,10 @@ public final class AppStore {
         profileRepository: ManagedProfileRepository = ManagedProfileRepository(),
         runtimeConfigurationPreparer: RuntimeConfigurationPreparer = RuntimeConfigurationPreparer(),
         networkIdentityService: NetworkIdentityService = NetworkIdentityService(),
-        proxySelectionRepository: ProxySelectionRepository? = nil
+        proxySelectionRepository: ProxySelectionRepository? = nil,
+        userDefaults: UserDefaults = .standard
     ) {
+        self.userDefaults = userDefaults
         self.coreService = coreService
         self.apiService = apiService
         self.systemProxyService = systemProxyService
@@ -93,9 +101,12 @@ public final class AppStore {
             ?? ProxySelectionRepository(rootURL: profileRepository.rootURL)
         routingOverrideRepository = RoutingOverrideRepository(rootURL: profileRepository.rootURL)
         appearanceMode = AppAppearance(
-            rawValue: UserDefaults.standard.string(forKey: "appearanceMode") ?? ""
+            rawValue: userDefaults.string(forKey: "appearanceMode") ?? ""
         ) ?? .system
-        reduceMotion = UserDefaults.standard.bool(forKey: "reduceMotion")
+        language = AppLanguage(
+            rawValue: userDefaults.string(forKey: "language") ?? ""
+        ) ?? .system
+        reduceMotion = userDefaults.bool(forKey: "reduceMotion")
         controllerURL = apiService.requestBuilder.baseURL
         controllerSecret = apiService.requestBuilder.secret
         configPath = profileRepository.runtimeConfigURL.path
@@ -111,6 +122,10 @@ public final class AppStore {
             return nil
         }
         return managedProfiles.first { $0.id == selectedManagedProfileID }
+    }
+
+    public func text(_ key: AppString) -> String {
+        language.text(key)
     }
 
     public var menuBarProfileTitle: String {

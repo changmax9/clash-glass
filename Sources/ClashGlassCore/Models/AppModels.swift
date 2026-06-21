@@ -15,16 +15,20 @@ public enum AppSection: String, CaseIterable, Identifiable, Sendable {
     public var id: String { rawValue }
 
     public var title: String {
+        AppLanguage.english.text(titleKey)
+    }
+
+    public var titleKey: AppString {
         switch self {
-        case .dashboard: "Dashboard"
-        case .proxies: "Proxies"
-        case .routing: "Routing"
-        case .profiles: "Profiles"
-        case .requests: "Requests"
-        case .connections: "Connections"
-        case .resources: "Resources"
-        case .logs: "Logs"
-        case .settings: "Settings"
+        case .dashboard: .dashboard
+        case .proxies: .proxies
+        case .routing: .routing
+        case .profiles: .profiles
+        case .requests: .requests
+        case .connections: .connections
+        case .resources: .resources
+        case .logs: .logs
+        case .settings: .settings
         }
     }
 
@@ -73,10 +77,14 @@ public enum OutboundMode: String, CaseIterable, Identifiable, Sendable {
     public var id: Self { self }
 
     public var title: String {
+        AppLanguage.english.text(titleKey)
+    }
+
+    public var titleKey: AppString {
         switch self {
-        case .rule: "Rule"
-        case .global: "Global"
-        case .direct: "Direct"
+        case .rule: .rule
+        case .global: .global
+        case .direct: .direct
         }
     }
 }
@@ -92,13 +100,29 @@ public enum AppAppearance: String, CaseIterable, Identifiable, Sendable {
         rawValue.capitalized
     }
 
-    public var colorScheme: ColorScheme? {
+    public func resolvedColorScheme(systemColorScheme: ColorScheme) -> ColorScheme {
         switch self {
-        case .system: nil
+        case .system: systemColorScheme
         case .light: .light
         case .dark: .dark
         }
     }
+}
+
+enum SettingsGroupKind: Hashable, Sendable {
+    case appearance
+    case language
+    case about
+}
+
+enum SettingsPagePolicy {
+    static let usesSinglePage = true
+    static let showsSectionTabs = false
+    static let groups: [SettingsGroupKind] = [
+        .appearance,
+        .language,
+        .about,
+    ]
 }
 
 public enum DashboardWidgetKind: String, CaseIterable, Identifiable, Sendable {

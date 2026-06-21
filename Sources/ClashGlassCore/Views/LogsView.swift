@@ -8,12 +8,12 @@ struct LogsView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Logs",
+            placeholder: "\(store.text(.search)) \(store.text(.logs))",
             actions: [
-                .init(title: "Clear", symbol: "trash") {
+                .init(title: store.text(.clear), symbol: "trash") {
                     store.clearLogs()
                 },
-                .init(title: "Export", symbol: "square.and.arrow.up") {
+                .init(title: store.text(.export), symbol: "square.and.arrow.up") {
                     do {
                         try ConfigurationFilePanel.saveLogs(store.exportedLogs)
                     } catch {
@@ -24,7 +24,7 @@ struct LogsView: View {
         ) {
             let filtered = filteredLogs
             if filtered.isEmpty {
-                EmptyGlassState(title: "No Logs", symbol: "terminal")
+                EmptyGlassState(title: store.text(.noLogs), symbol: "terminal")
             } else {
                 GlassCard(radius: 16, padding: 0) {
                     VStack(spacing: 0) {

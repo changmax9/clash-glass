@@ -12,16 +12,19 @@ struct RequestsView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Requests",
+            placeholder: "\(store.text(.search)) \(store.text(.requests))",
             actions: [
-                .init(title: autoScroll ? "Stop Auto Scroll" : "Scroll to Top", symbol: autoScroll ? "nosign" : "arrow.up.to.line") {
+                .init(
+                    title: autoScroll ? store.text(.stopAutoScroll) : store.text(.scrollToTop),
+                    symbol: autoScroll ? "nosign" : "arrow.up.to.line"
+                ) {
                     autoScroll.toggle()
                 },
             ]
         ) {
             let filtered = filteredRequests
             if filtered.isEmpty {
-                EmptyGlassState(title: "No Requests", symbol: "text.line.first.and.arrowtriangle.forward")
+                EmptyGlassState(title: store.text(.noRequests), symbol: "text.line.first.and.arrowtriangle.forward")
             } else {
                 GlassCard(radius: 16, padding: 0) {
                     VStack(spacing: 0) {
@@ -55,21 +58,21 @@ struct ResourcesView: View {
 
     var body: some View {
         FeaturePage(
-            placeholder: "Search Resources",
+            placeholder: "\(store.text(.search)) \(store.text(.resources))",
             actions: [
-                .init(title: "Reload", symbol: "arrow.clockwise") {
+                .init(title: store.text(.reload), symbol: "arrow.clockwise") {
                     Task { await store.refreshRuntimeData() }
                 },
-                .init(title: "Open Folder", symbol: "folder") {
+                .init(title: store.text(.openFolder), symbol: "folder") {
                     ConfigurationFilePanel.reveal(store.managedProfilesFolderURL)
                 },
             ]
         ) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 14)], spacing: 14) {
-                ResourceCard(title: "GEOIP", detail: "Country Database", status: "Ready", symbol: "globe.asia.australia.fill")
-                ResourceCard(title: "GEOSITE", detail: "Domain Rule Database", status: "Ready", symbol: "list.bullet.rectangle")
-                ResourceCard(title: "ASN", detail: "Autonomous System Database", status: "Ready", symbol: "network")
-                ResourceCard(title: "MMDB", detail: "Metadata Database", status: "Ready", symbol: "externaldrive.fill")
+                ResourceCard(title: "GEOIP", detail: "Country Database", status: store.text(.ready), symbol: "globe.asia.australia.fill")
+                ResourceCard(title: "GEOSITE", detail: "Domain Rule Database", status: store.text(.ready), symbol: "list.bullet.rectangle")
+                ResourceCard(title: "ASN", detail: "Autonomous System Database", status: store.text(.ready), symbol: "network")
+                ResourceCard(title: "MMDB", detail: "Metadata Database", status: store.text(.ready), symbol: "externaldrive.fill")
             }
         }
     }

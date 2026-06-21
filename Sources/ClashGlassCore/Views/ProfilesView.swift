@@ -12,15 +12,15 @@ struct ProfilesView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Profiles",
+            placeholder: "\(store.text(.search)) \(store.text(.profiles))",
             actions: [
-                .init(title: "Validate All", symbol: "checkmark.shield") {
+                .init(title: store.text(.validateAll), symbol: "checkmark.shield") {
                     Task { await store.validateAllManagedProfiles() }
                 },
-                .init(title: "Open Managed Folder", symbol: "folder") {
+                .init(title: store.text(.openManagedFolder), symbol: "folder") {
                     ConfigurationFilePanel.reveal(store.managedProfilesFolderURL)
                 },
-                .init(title: "Import YAML", symbol: "plus") {
+                .init(title: store.text(.importYAML), symbol: "plus") {
                     importYAML()
                 },
             ]
@@ -31,11 +31,15 @@ struct ProfilesView: View {
                         Image(systemName: "doc.badge.plus")
                             .font(.system(size: 30, weight: .bold))
                             .foregroundStyle(.secondary)
-                        Text(store.managedProfiles.isEmpty ? "Import a Clash YAML configuration" : "No Matching Profiles")
+                        Text(
+                            store.managedProfiles.isEmpty
+                                ? store.text(.importConfiguration)
+                                : store.text(.noMatchingProfiles)
+                        )
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundStyle(.secondary)
                         if store.managedProfiles.isEmpty {
-                            LiquidActionButton(title: "Import Configuration", symbol: "square.and.arrow.down") {
+                            LiquidActionButton(title: store.text(.importConfiguration), symbol: "square.and.arrow.down") {
                                 importYAML()
                             }
                         }
@@ -49,6 +53,7 @@ struct ProfilesView: View {
                             profile: profile,
                             isSelected: profile.id == store.selectedManagedProfileID,
                             isRunning: profile.id == store.selectedManagedProfileID && store.isStarted,
+                            language: store.language,
                             select: {
                                 Task { await store.selectManagedProfile(profile.id) }
                             },
@@ -78,12 +83,12 @@ struct ProfilesView: View {
             }
             return !yamlURLs.isEmpty
         }
-        .alert("Rename Profile", isPresented: $showsProfileRename) {
-            TextField("Profile Name", text: $renameDraft)
-            Button("Cancel", role: .cancel) {
+        .alert(store.text(.renameProfile), isPresented: $showsProfileRename) {
+            TextField(store.text(.profileName), text: $renameDraft)
+            Button(store.text(.cancel), role: .cancel) {
                 renameProfileID = nil
             }
-            Button("Rename") {
+            Button(store.text(.rename)) {
                 guard let renameProfileID else { return }
                 store.renameManagedProfile(renameProfileID, to: renameDraft)
                 self.renameProfileID = nil
@@ -99,12 +104,12 @@ struct ProfilesView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Delete Profile", role: .destructive) {
+            Button(store.text(.deleteProfile), role: .destructive) {
                 guard let profilePendingDeletion else { return }
                 store.removeManagedProfile(profilePendingDeletion.id)
                 self.profilePendingDeletion = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button(store.text(.cancel), role: .cancel) {
                 profilePendingDeletion = nil
             }
         } message: {
@@ -137,6 +142,7 @@ private struct ManagedProfileCard: View {
     let profile: ManagedProfile
     let isSelected: Bool
     let isRunning: Bool
+    let language: AppLanguage
     let select: () -> Void
     let validate: () -> Void
     let reveal: () -> Void
@@ -154,7 +160,11 @@ private struct ManagedProfileCard: View {
                         .foregroundStyle(isRunning ? palette.green : isSelected ? palette.rose : palette.secondaryText)
                     Spacer()
                     StatusChip(
-                        text: isRunning ? "Running" : isSelected ? "Current" : "Managed",
+                        text: isRunning
+                            ? language.text(.running)
+                            : isSelected
+                                ? language.text(.current)
+                                : language.text(.managed),
                         symbol: nil,
                         tint: isRunning ? palette.green : isSelected ? palette.rose : nil
                     )
@@ -165,7 +175,7 @@ private struct ManagedProfileCard: View {
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(palette.primaryText)
                         .lineLimit(1)
-                    Text("Managed YAML")
+                    Text(language.text(.managedYAML))
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.secondaryText)
                     Text(profile.importedAt, style: .relative)
@@ -175,17 +185,17 @@ private struct ManagedProfileCard: View {
 
                 HStack(spacing: 8) {
                     LiquidActionButton(
-                        title: isSelected ? "Selected" : "Use",
+                        title: isSelected ? language.text(.selected) : language.text(.use),
                         symbol: isSelected ? "checkmark" : "play",
                         tint: isSelected ? palette.rose.opacity(0.24) : nil,
                         compact: true,
                         action: select
                     )
                     Spacer()
-                    LiquidIconButton(title: "Validate", symbol: "checkmark.shield", size: 28, action: validate)
-                    LiquidIconButton(title: "Reveal In Finder", symbol: "folder", size: 28, action: reveal)
-                    LiquidIconButton(title: "Rename", symbol: "pencil", size: 28, action: rename)
-                    LiquidIconButton(title: "Delete", symbol: "trash", tint: .red.opacity(0.18), size: 28, action: delete)
+                    LiquidIconButton(title: language.text(.validate), symbol: "checkmark.shield", size: 28, action: validate)
+                    LiquidIconButton(title: language.text(.revealInFinder), symbol: "folder", size: 28, action: reveal)
+                    LiquidIconButton(title: language.text(.rename), symbol: "pencil", size: 28, action: rename)
+                    LiquidIconButton(title: language.text(.delete), symbol: "trash", tint: .red.opacity(0.18), size: 28, action: delete)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 142, alignment: .leading)

@@ -18,7 +18,7 @@ struct ProxiesView: View {
     var body: some View {
         FeaturePage(
             searchText: $query,
-            placeholder: "Search Proxies",
+            placeholder: "\(store.text(.search)) \(store.text(.proxies))",
             actions: toolbarActions
         ) {
             VStack(alignment: .leading, spacing: 14) {
@@ -34,7 +34,10 @@ struct ProxiesView: View {
                             symbol: "waveform.path.ecg"
                         )
                     } else {
-                        StatusChip(text: "\(filteredGroups.reduce(0) { $0 + $1.nodes.count }) nodes", symbol: "point.3.connected.trianglepath.dotted")
+                        StatusChip(
+                            text: "\(filteredGroups.reduce(0) { $0 + $1.nodes.count }) \(store.text(.nodes))",
+                            symbol: "point.3.connected.trianglepath.dotted"
+                        )
                     }
                 }
 
@@ -50,7 +53,7 @@ struct ProxiesView: View {
     private var toolbarActions: [FeatureAction] {
         var actions = [
             FeatureAction(
-                title: store.isLatencyTesting ? store.latencyTestProgress.text : "Refresh",
+                title: store.isLatencyTesting ? store.latencyTestProgress.text : store.text(.refresh),
                 symbol: store.isLatencyTesting ? "hourglass" : "arrow.clockwise",
                 isDisabled: store.isLatencyTesting
             ) {
@@ -61,7 +64,7 @@ struct ProxiesView: View {
         if ProxiesToolbarPolicy.showsSeparateDelayTestAction {
             actions.append(
                 FeatureAction(
-                    title: "Delay Test",
+                    title: store.text(.delayTest),
                     symbol: "speedometer",
                     isDisabled: store.isLatencyTesting
                 ) {
@@ -71,12 +74,12 @@ struct ProxiesView: View {
         }
 
         actions.append(
-            FeatureAction(title: "Providers", symbol: "chart.bar.doc.horizontal") {
+            FeatureAction(title: store.text(.providers), symbol: "chart.bar.doc.horizontal") {
                 store.selectedSection = .resources
             }
         )
         actions.append(
-            FeatureAction(title: "Settings", symbol: "slider.horizontal.3") {
+            FeatureAction(title: store.text(.settings), symbol: "slider.horizontal.3") {
                 store.selectedSection = .settings
             }
         )
@@ -118,7 +121,9 @@ struct ProxiesView: View {
                             Text(group.name)
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
                             StatusChip(
-                                text: group.kind.isAutomatic ? "Automatic · \(group.policy)" : group.policy,
+                                text: group.kind.isAutomatic
+                                    ? "\(store.text(.automatic)) · \(group.policy)"
+                                    : group.policy,
                                 symbol: group.kind.isAutomatic ? "bolt.horizontal.circle" : nil,
                                 tint: palette.rose
                             )
@@ -136,7 +141,9 @@ struct ProxiesView: View {
                             }
                             .buttonStyle(.plain)
                             .contentShape(Circle())
-                            .help(isExpanded ? "Collapse \(group.name)" : "Expand \(group.name)")
+                            .help(
+                                "\(isExpanded ? store.text(.collapse) : store.text(.expand)) \(group.name)"
+                            )
                         }
                         .foregroundStyle(palette.secondaryText)
                         .padding(.horizontal, 16)

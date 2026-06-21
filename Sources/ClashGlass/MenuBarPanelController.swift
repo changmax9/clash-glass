@@ -7,17 +7,25 @@ import SwiftUI
 @MainActor
 final class MenuBarPanelController: NSObject {
     private let store: AppStore
+    private let systemAppearanceMonitor: SystemAppearanceMonitor
     private let statusItem: NSStatusItem
     private let panel: MenuBarPanelWindow
     private var localMouseMonitor: Any?
     private var globalMouseMonitor: Any?
     private var fadeGeneration = 0
 
-    init(store: AppStore) {
+    init(
+        store: AppStore,
+        systemAppearanceMonitor: SystemAppearanceMonitor
+    ) {
         self.store = store
+        self.systemAppearanceMonitor = systemAppearanceMonitor
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
-        let rootView = MenuBarPanelRootView(store: store)
+        let rootView = MenuBarPanelRootView(
+            store: store,
+            systemAppearanceMonitor: systemAppearanceMonitor
+        )
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.frame.size = hostingView.fittingSize
         hostingView.wantsLayer = true
@@ -189,9 +197,15 @@ private final class MenuBarPanelWindow: NSPanel {
 
 private struct MenuBarPanelRootView: View {
     @Bindable var store: AppStore
+    @Bindable var systemAppearanceMonitor: SystemAppearanceMonitor
 
     var body: some View {
         MenuBarPanelView(store: store)
-            .preferredColorScheme(store.appearanceMode.colorScheme)
+            .preferredColorScheme(
+                store.appearanceMode.resolvedColorScheme(
+                    systemColorScheme: systemAppearanceMonitor.colorScheme
+                )
+            )
+            .environment(\.locale, store.language.locale)
     }
 }

@@ -24,6 +24,10 @@ TUN state through Mihomo's controller API.
 - Per-profile routing overrides
 - Proxy latency testing, live traffic, connection, and log views
 - Menu bar quick access
+- Light, dark, and live system appearance modes
+- English, Simplified Chinese, Traditional Chinese, Japanese, French, Russian,
+  Spanish, and Portuguese interface support
+- Signed in-app updates powered by Sparkle
 - No bundled subscriptions, sample profiles, or telemetry
 
 ## Requirements
@@ -52,6 +56,26 @@ The downloaded runtime files stay local and are excluded from Git.
 ```bash
 swift test
 ```
+
+## Publish an update
+
+Updates are published from version tags, not ordinary commits. Create and push
+a semantic version tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The Release workflow builds a DMG, signs it with Sparkle's EdDSA key, generates
+the appcast, and uploads both files to a GitHub Release. Installed copies show
+an **Update** capsule beside the macOS window controls when a newer release is
+available.
+
+The `SPARKLE_PRIVATE_KEY` repository secret must remain configured. Application
+preferences stay in `~/Library/Preferences`, while profiles and runtime data
+stay in `~/Library/Application Support/Clash Glass`; replacing the app bundle
+does not remove either location.
 
 ## Project layout
 

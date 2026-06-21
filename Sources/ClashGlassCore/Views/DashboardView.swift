@@ -53,7 +53,8 @@ struct DashboardView: View {
 
                 VStack(spacing: gap) {
                     ToggleStatusCard(
-                        title: InterfaceCopy.systemProxy,
+                        title: store.text(.systemProxy),
+                        optionsTitle: store.text(.options),
                         symbol: "arrow.up.left.and.arrow.down.right",
                         isOn: store.isSystemProxyEnabled
                     ) {
@@ -65,6 +66,7 @@ struct DashboardView: View {
 
                     ToggleStatusCard(
                         title: "TUN",
+                        optionsTitle: store.text(.options),
                         symbol: "waveform.path.ecg",
                         isOn: store.isTunEnabled
                     ) {
@@ -168,7 +170,7 @@ private struct NetworkSpeedCard: View {
         let down = store.isStarted ? store.downloadSpeedText : "0B/s"
         GlassCard(radius: 14, padding: 0) {
             VStack(spacing: 0) {
-                CardHeader(symbol: "speedometer", title: InterfaceCopy.networkSpeed, trailing: "↑ \(up)   ↓ \(down)")
+                CardHeader(symbol: "speedometer", title: store.text(.networkSpeed), trailing: "↑ \(up)   ↓ \(down)")
                     .padding(.horizontal, 16)
                     .padding(.top, 15)
 
@@ -226,6 +228,7 @@ private struct NetworkCurve: View {
 
 private struct ToggleStatusCard: View {
     let title: String
+    let optionsTitle: String
     let symbol: String
     let isOn: Bool
     let action: () -> Void
@@ -244,7 +247,7 @@ private struct ToggleStatusCard: View {
                             .minimumScaleFactor(0.62)
                             .layoutPriority(1)
                     }
-                    Text("Options")
+                    Text(optionsTitle)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
@@ -272,7 +275,7 @@ private struct OutboundModeCard: View {
                 alignment: .leading,
                 spacing: CGFloat(OutboundModeLayoutMetrics.titleSpacing)
             ) {
-                CardHeader(symbol: "arrow.triangle.branch", title: InterfaceCopy.outboundMode)
+                CardHeader(symbol: "arrow.triangle.branch", title: store.text(.outboundMode))
                     .frame(
                         height: CGFloat(OutboundModeLayoutMetrics.headerHeight),
                         alignment: .leading
@@ -282,7 +285,11 @@ private struct OutboundModeCard: View {
                     spacing: CGFloat(OutboundModeLayoutMetrics.rowSpacing)
                 ) {
                     ForEach(OutboundMode.allCases) { mode in
-                        ModeRow(mode: mode, selectedMode: store.selectedMode) {
+                        ModeRow(
+                            title: store.text(mode.titleKey),
+                            mode: mode,
+                            selectedMode: store.selectedMode
+                        ) {
                             Task {
                                 await store.setOutboundMode(mode)
                             }
@@ -296,6 +303,7 @@ private struct OutboundModeCard: View {
 }
 
 private struct ModeRow: View {
+    let title: String
     let mode: OutboundMode
     let selectedMode: OutboundMode
     let action: () -> Void
@@ -334,7 +342,7 @@ private struct ModeRow: View {
                 .animation(.spring(response: 0.24, dampingFraction: 0.68), value: isHovering)
                 .animation(.spring(response: 0.24, dampingFraction: 0.78), value: isSelected)
 
-                Text(mode.title)
+                Text(title)
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(palette.primaryText)
                     .lineLimit(1)
@@ -364,7 +372,7 @@ private struct NetworkDetectionCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 9) {
                     FlagBadge(countryCode: store.networkCountryCode)
-                    Text(InterfaceCopy.networkDetection)
+                    Text(store.text(.networkDetection))
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
@@ -395,7 +403,7 @@ private struct IntranetIPCard: View {
     var body: some View {
         GlassCard(radius: 14, padding: 15) {
             VStack(alignment: .leading, spacing: 10) {
-                CardHeader(symbol: "rectangle.connected.to.line.below", title: InterfaceCopy.intranetIP)
+                CardHeader(symbol: "rectangle.connected.to.line.below", title: store.text(.intranetIP))
                 Text(store.intranetIP)
                     .font(.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit())
                     .lineLimit(1)
@@ -413,14 +421,14 @@ private struct TrafficUsageCard: View {
         let palette = GlassPalette(colorScheme: colorScheme)
         GlassCard(radius: 14, padding: 15) {
             VStack(alignment: .leading, spacing: 12) {
-                CardHeader(symbol: "chart.pie.fill", title: InterfaceCopy.trafficUsage)
+                CardHeader(symbol: "chart.pie.fill", title: store.text(.trafficUsage))
 
                 HStack(spacing: 14) {
                     DonutView(first: store.isStarted ? 0.35 : 0.5)
                         .frame(width: 58, height: 58)
                     VStack(alignment: .leading, spacing: 8) {
-                        LegendRow(color: palette.rose, title: "Upload")
-                        LegendRow(color: palette.tertiaryText.opacity(0.75), title: "Download")
+                        LegendRow(color: palette.rose, title: store.text(.upload))
+                        LegendRow(color: palette.tertiaryText.opacity(0.75), title: store.text(.download))
                     }
                 }
 

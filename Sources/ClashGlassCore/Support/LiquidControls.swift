@@ -116,6 +116,7 @@ private struct LiquidIconButtonStyle: ButtonStyle {
 struct CoreStatusToolbarButton: View {
     let symbol: String
     let isRunning: Bool
+    let accessibilityTitle: String
     let action: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var isHovering = false
@@ -194,8 +195,8 @@ struct CoreStatusToolbarButton: View {
         .scaleEffect(isHovering ? 1.04 : 1)
         .onHover { isHovering = $0 }
         .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isHovering)
-        .help("Core Status")
-        .accessibilityLabel("Core Status")
+        .help(accessibilityTitle)
+        .accessibilityLabel(accessibilityTitle)
     }
 }
 
@@ -302,6 +303,7 @@ struct AppKitMenuButton: NSViewRepresentable {
     }
 
     let entries: [Entry]
+    var accessibilityTitle = "Quick Edit"
 
     func makeCoordinator() -> Coordinator {
         Coordinator(entries: entries)
@@ -316,13 +318,13 @@ struct AppKitMenuButton: NSViewRepresentable {
         button.target = context.coordinator
         button.action = #selector(Coordinator.showMenu(_:))
         button.sendAction(on: [.leftMouseDown])
-        button.setAccessibilityLabel("Quick Edit")
+        button.setAccessibilityLabel(accessibilityTitle)
         return button
     }
 
     func updateNSView(_ button: NSButton, context: Context) {
         context.coordinator.entries = entries
-        button.setAccessibilityLabel("Quick Edit")
+        button.setAccessibilityLabel(accessibilityTitle)
     }
 
     @MainActor

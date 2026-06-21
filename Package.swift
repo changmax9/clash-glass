@@ -10,6 +10,12 @@ let package = Package(
     products: [
         .executable(name: "ClashGlass", targets: ["ClashGlass"])
     ],
+    dependencies: [
+        .package(
+            url: "https://github.com/sparkle-project/Sparkle",
+            exact: "2.9.3"
+        )
+    ],
     targets: [
         .target(
             name: "ClashGlassCore",
@@ -17,7 +23,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "ClashGlass",
-            dependencies: ["ClashGlassCore"],
+            dependencies: [
+                "ClashGlassCore",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
             path: "Sources/ClashGlass"
         ),
         .testTarget(
