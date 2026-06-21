@@ -13,12 +13,10 @@ enum RailSurfaceMetrics {
 enum RailHitTargetMetrics {
     static let width = 74.0
     static let height = 48.0
-    static let settingsBottomInset = 60.0
 }
 
 enum RailItem: Equatable {
     case section(AppSection)
-    case settings
 }
 
 enum RailSelectionResolver {
@@ -36,10 +34,8 @@ enum RailSelectionResolver {
             .section(.requests)
         case .connections:
             .section(.connections)
-        case .logs, .tools:
-            .section(.tools)
-        case .settings:
-            .settings
+        case .logs, .settings:
+            .section(.settings)
         }
     }
 }
@@ -54,14 +50,6 @@ enum RailSelectionMotion {
             ? nil
             : .spring(response: 0.42, dampingFraction: 0.80)
     }
-}
-
-enum RailSettingsInteractionPolicy {
-    static let opensSettingsDirectly = true
-    static let showsSecondaryMenu = false
-    static let targetsMainWindowSection = true
-    static let opensSeparateScene = false
-    static let targetSection = AppSection.settings
 }
 
 struct RailHoverState {

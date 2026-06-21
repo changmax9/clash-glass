@@ -1,11 +1,12 @@
 import SwiftUI
 
-private enum SettingsSection: String, CaseIterable, Identifiable {
+enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case core
     case network
     case appearance
     case diagnostics
+    case about
 
     var id: Self { self }
     var title: String { rawValue.capitalized }
@@ -17,8 +18,26 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
         case .network: "network"
         case .appearance: "paintbrush"
         case .diagnostics: "stethoscope"
+        case .about: "info.circle"
         }
     }
+}
+
+enum ApplicationDisclaimer {
+    static let purpose =
+        "Clash Glass is provided solely for lawful educational, academic, interoperability, and security research purposes."
+
+    static let responsibility =
+        "You are solely responsible for obtaining all required authorization and for complying with all applicable laws, regulations, licenses, network policies, and third-party terms. You must not use this software to gain unauthorized access, interfere with services, evade lawful restrictions, infringe rights, or facilitate unlawful activity."
+
+    static let liability =
+        "To the maximum extent permitted by applicable law, this software is provided \"as is\" and \"as available,\" without warranties of any kind. The developer and contributors are not liable for any direct, indirect, incidental, special, exemplary, punitive, or consequential loss, including loss of data, privacy, profits, service, accounts, devices, or network availability, arising from or related to the software or its use, even if advised of the possibility of such loss."
+
+    static let thirdParties =
+        "Mihomo, network providers, subscription providers, websites, and other third-party components or services are independent from Clash Glass. Their availability, security, content, conduct, and terms are outside the developer's control."
+
+    static let indemnity =
+        "To the maximum extent permitted by applicable law, you agree to defend, indemnify, and hold harmless the developer and contributors from claims, damages, penalties, liabilities, costs, and reasonable legal fees arising from your use, misuse, distribution, configuration, or violation of law or third-party rights."
 }
 
 public struct AppSettingsView: View {
@@ -98,6 +117,8 @@ public struct AppSettingsView: View {
             appearanceSettings
         case .diagnostics:
             diagnosticsSettings
+        case .about:
+            aboutSettings
         }
     }
 
@@ -230,6 +251,23 @@ public struct AppSettingsView: View {
         }
     }
 
+    private var aboutSettings: some View {
+        VStack(spacing: 14) {
+            SettingsGroup(title: "About Clash Glass", symbol: "info.circle") {
+                SettingsValueRow(title: "Version", value: appVersion)
+                SettingsValueRow(title: "Engine", value: "Powered by Mihomo")
+            }
+
+            SettingsGroup(title: "Legal Notice", symbol: "exclamationmark.shield") {
+                SettingsLegalNotice(title: "Permitted Use", text: ApplicationDisclaimer.purpose)
+                SettingsLegalNotice(title: "Your Responsibility", text: ApplicationDisclaimer.responsibility)
+                SettingsLegalNotice(title: "No Warranty and Limitation of Liability", text: ApplicationDisclaimer.liability)
+                SettingsLegalNotice(title: "Third-Party Services", text: ApplicationDisclaimer.thirdParties)
+                SettingsLegalNotice(title: "Indemnification", text: ApplicationDisclaimer.indemnity)
+            }
+        }
+    }
+
     private var modeBinding: Binding<OutboundMode> {
         Binding(
             get: { store.selectedMode },
@@ -253,6 +291,11 @@ public struct AppSettingsView: View {
         case let .failed(message): "Failed: \(message)"
         }
     }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            ?? "Development"
+    }
 }
 
 private struct SettingsHeader: View {
@@ -275,6 +318,7 @@ private struct SettingsHeader: View {
         case .network: "Configure proxy routing and outbound behavior."
         case .appearance: "Tune the native Liquid Glass experience."
         case .diagnostics: "Inspect and troubleshoot the runtime."
+        case .about: "Review project information and legal terms."
         }
     }
 }
@@ -314,6 +358,26 @@ private struct SettingsValueRow: View {
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+    }
+}
+
+private struct SettingsLegalNotice: View {
+    let title: String
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+            Text(text)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
     }

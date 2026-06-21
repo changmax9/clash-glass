@@ -29,6 +29,10 @@ public enum DashboardTopRowLayoutMetrics {
     ).upperHeight
 }
 
+public enum DashboardCardContentPolicy {
+    public static let networkDetectionShowsInformationIcon = false
+}
+
 public enum OutboundModeLayoutMetrics {
     public static let cardHeight = DashboardRowMetrics.standardTotalHeight
     public static let cardPadding: Double = 14

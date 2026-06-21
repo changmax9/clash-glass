@@ -47,6 +47,10 @@ import Testing
     )
 }
 
+@Test func networkDetectionCardDoesNotShowAnInformationIcon() {
+    #expect(!DashboardCardContentPolicy.networkDetectionShowsInformationIcon)
+}
+
 @Test func dashboardLayoutScalesDownInsteadOfOverflowingSmallWindows() {
     let layout = DashboardLayoutMetrics(availableWidth: 760, availableHeight: 520)
 

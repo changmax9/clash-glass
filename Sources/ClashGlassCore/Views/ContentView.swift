@@ -69,7 +69,7 @@ private struct IconRail: View {
         .profiles,
         .requests,
         .connections,
-        .tools,
+        .settings,
     ]
 
     var body: some View {
@@ -129,55 +129,6 @@ private struct IconRail: View {
             }
 
             Spacer()
-
-            let settingsItem = RailItem.settings
-            let settingsPresentation = RailItemPresentation(
-                item: settingsItem,
-                selectedSection: store.selectedSection,
-                hoveredItem: hoverState.hoveredItem,
-                reduceMotion: reduceMotion
-            )
-
-            Button {
-                store.selectedSection = RailSettingsInteractionPolicy.targetSection
-            } label: {
-                ZStack {
-                    Color.clear
-                        .frame(
-                            width: CGFloat(RailHitTargetMetrics.width),
-                            height: CGFloat(RailHitTargetMetrics.height)
-                        )
-
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(
-                            settingsPresentation.isHovered
-                                ? palette.primaryText
-                                : palette.secondaryText
-                        )
-                        .frame(width: 54, height: 34)
-                        .background {
-                            if settingsPresentation.showsSelectionBackground {
-                                railSelection(palette: palette)
-                                    .matchedGeometryEffect(
-                                        id: "rail-selection",
-                                        in: selectionNamespace
-                                    )
-                            }
-                        }
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .scaleEffect(settingsPresentation.scale)
-            .offset(y: settingsPresentation.verticalOffset)
-            .brightness(settingsPresentation.brightness)
-            .shadow(color: .black.opacity(settingsPresentation.shadowOpacity), radius: 10, y: 5)
-            .onHover { hovering in
-                hoverState.update(item: settingsItem, isHovering: hovering)
-            }
-            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: settingsPresentation.isHovered)
-            .padding(.bottom, CGFloat(RailHitTargetMetrics.settingsBottomInset))
         }
         .padding(.top, 46)
         .animation(
@@ -377,8 +328,6 @@ private struct MainStage: View {
             ResourcesView(store: store)
         case .logs:
             LogsView(store: store)
-        case .tools:
-            ToolsView(store: store)
         case .settings:
             AppSettingsView(store: store)
         }

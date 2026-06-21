@@ -75,42 +75,6 @@ struct ResourcesView: View {
     }
 }
 
-struct ToolsView: View {
-    @Bindable var store: AppStore
-
-    var body: some View {
-        FeaturePage(
-            placeholder: "Search Tools",
-            actions: [
-                .init(title: "Open Logs", symbol: "terminal") {
-                    store.selectedSection = .logs
-                },
-            ]
-        ) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 14)], spacing: 14) {
-                ToolCard(title: "Core", detail: store.isCoreRunning ? "Connected" : "Stopped", symbol: "cpu.fill", tint: store.isCoreRunning ? .green : .secondary) {
-                    Task {
-                        await store.toggleRuntime(configPath: store.configPath)
-                    }
-                }
-                ToolCard(title: InterfaceCopy.systemProxy, detail: store.isSystemProxyEnabled ? "Enabled" : "Disabled", symbol: "arrow.up.left.and.arrow.down.right", tint: store.isSystemProxyEnabled ? .green : .secondary) {
-                    Task {
-                        await store.toggleSystemProxy()
-                    }
-                }
-                ToolCard(title: "TUN", detail: store.isTunEnabled ? "Enabled" : "Disabled", symbol: "waveform.path.ecg", tint: store.isTunEnabled ? .green : .secondary) {
-                    Task {
-                        await store.setTunEnabled(!store.isTunEnabled)
-                    }
-                }
-                ToolCard(title: "Configuration", detail: store.configPath, symbol: "doc.badge.gearshape.fill", tint: .secondary) {
-                    ConfigurationFilePanel.reveal(URL(fileURLWithPath: store.configPath))
-                }
-            }
-        }
-    }
-}
-
 private struct ResourceCard: View {
     let title: String
     let detail: String
@@ -136,41 +100,5 @@ private struct ResourceCard: View {
             }
             .frame(maxWidth: .infinity, minHeight: 108, alignment: .leading)
         }
-    }
-}
-
-private struct ToolCard: View {
-    let title: String
-    let detail: String
-    let symbol: String
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            GlassCard(radius: 16, padding: 16) {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack {
-                        Image(systemName: symbol)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(tint)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(title)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                        Text(detail)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                .frame(maxWidth: .infinity, minHeight: 108, alignment: .leading)
-            }
-        }
-        .buttonStyle(.plain)
     }
 }

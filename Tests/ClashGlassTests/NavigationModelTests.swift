@@ -12,9 +12,17 @@ import Testing
         "Connections",
         "Resources",
         "Logs",
-        "Tools",
         "Settings",
     ])
+}
+
+@Test func settingsEndsWithAnAboutDisclaimerSection() {
+    #expect(SettingsSection.allCases.last == .about)
+    #expect(ApplicationDisclaimer.purpose.contains("educational"))
+    #expect(ApplicationDisclaimer.purpose.contains("research"))
+    #expect(ApplicationDisclaimer.responsibility.contains("applicable laws"))
+    #expect(ApplicationDisclaimer.liability.contains("provided \"as is\""))
+    #expect(ApplicationDisclaimer.liability.contains("not liable"))
 }
 
 @MainActor
@@ -31,12 +39,10 @@ import Testing
     #expect(store.logs.isEmpty)
 }
 
-@Test func railSettingsButtonOpensSettingsDirectly() {
-    #expect(RailSettingsInteractionPolicy.opensSettingsDirectly)
-    #expect(!RailSettingsInteractionPolicy.showsSecondaryMenu)
-    #expect(RailSettingsInteractionPolicy.targetsMainWindowSection)
-    #expect(!RailSettingsInteractionPolicy.opensSeparateScene)
-    #expect(RailSettingsInteractionPolicy.targetSection == .settings)
+@Test func settingsReplacesToolsInThePrimaryRail() {
+    #expect(AppSection.settings.symbol == "wrench.and.screwdriver.fill")
+    #expect(RailSelectionResolver.item(for: .settings) == .section(.settings))
+    #expect(RailSelectionResolver.item(for: .logs) == .section(.settings))
 }
 
 @Test func coreStatusPresentationDistinguishesControllerOnlyFromStopped() {
@@ -116,10 +122,9 @@ import Testing
     #expect(ToolbarControlMetrics.hitTarget > ToolbarControlMetrics.visibleSize)
 }
 
-@Test func railUsesAFullWidthPointerTargetAndKeepsSettingsAboveTheWindowEdge() {
+@Test func railUsesAFullWidthPointerTarget() {
     #expect(RailHitTargetMetrics.width == 74)
     #expect(RailHitTargetMetrics.height >= 44)
-    #expect(RailHitTargetMetrics.settingsBottomInset >= 56)
 }
 
 @Test func glassCardMotionProvidesIndependentHoverLift() {
@@ -206,10 +211,10 @@ import Testing
 
     #expect(RailSelectionResolver.item(for: .dashboard) == .section(.dashboard))
     #expect(RailSelectionResolver.item(for: .resources) == .section(.proxies))
-    #expect(RailSelectionResolver.item(for: .logs) == .section(.tools))
+    #expect(RailSelectionResolver.item(for: .logs) == .section(.settings))
     #expect(RailSelectionResolver.item(for: .routing) == .section(.routing))
     #expect(RailSelectionResolver.item(for: .profiles) == .section(.profiles))
-    #expect(RailSelectionResolver.item(for: .settings) == .settings)
+    #expect(RailSelectionResolver.item(for: .settings) == .section(.settings))
 }
 
 @Test func secondaryPagesKeepTheirParentRailItemSelected() {
@@ -220,7 +225,7 @@ import Testing
         reduceMotion: false
     )
     let logsPresentation = RailItemPresentation(
-        item: .section(.tools),
+        item: .section(.settings),
         selectedSection: .logs,
         hoveredItem: nil,
         reduceMotion: false

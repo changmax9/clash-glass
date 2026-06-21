@@ -368,9 +368,7 @@ private struct NetworkDetectionCard: View {
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
-                    Spacer(minLength: 6)
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14, weight: .bold))
+                    Spacer(minLength: 0)
                 }
                 Text(store.externalIP)
                     .font(.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit())

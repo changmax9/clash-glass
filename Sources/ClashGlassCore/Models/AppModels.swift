@@ -10,7 +10,6 @@ public enum AppSection: String, CaseIterable, Identifiable, Sendable {
     case connections
     case resources
     case logs
-    case tools
     case settings
 
     public var id: String { rawValue }
@@ -25,7 +24,6 @@ public enum AppSection: String, CaseIterable, Identifiable, Sendable {
         case .connections: "Connections"
         case .resources: "Resources"
         case .logs: "Logs"
-        case .tools: "Tools"
         case .settings: "Settings"
         }
     }
@@ -40,8 +38,7 @@ public enum AppSection: String, CaseIterable, Identifiable, Sendable {
         case .connections: "list.bullet.rectangle.fill"
         case .resources: "server.rack"
         case .logs: "terminal.fill"
-        case .tools: "wrench.and.screwdriver.fill"
-        case .settings: "gearshape"
+        case .settings: "wrench.and.screwdriver.fill"
         }
     }
 }
@@ -259,7 +256,6 @@ enum InterfaceCopy {
         "Search Requests",
         "Search Connections",
         "Search Resources",
-        "Search Tools",
         "Search Logs",
         "Validate All",
         "Open Managed Folder",
