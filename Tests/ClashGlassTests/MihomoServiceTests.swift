@@ -573,24 +573,13 @@ private func testProxyGroup() -> ProxyGroup {
 }
 
 @MainActor
-@Test func appStoreDoesNotPretendRuntimeStartedWhenCoreBinaryIsMissing() async throws {
-    let rootURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent(UUID().uuidString, isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: rootURL) }
-    try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
-    let configURL = rootURL.appendingPathComponent("config.yaml")
-    try "proxies: {}\nrules: []\n".write(to: configURL, atomically: true, encoding: .utf8)
-    let store = AppStore(
-        coreService: MihomoCoreService(coreBinaryURL: nil),
-        profileRepository: ManagedProfileRepository(
-            rootURL: rootURL.appendingPathComponent("ApplicationSupport", isDirectory: true)
-        )
-    )
+@Test func coreServiceDoesNotStartWhenCoreBinaryIsMissing() async {
+    let service = MihomoCoreService(coreBinaryURL: nil)
 
-    await store.toggleRuntime(configPath: configURL.path)
+    await service.start(configPath: "/path/is/not/used/without/a/core.yaml")
 
-    #expect(store.isStarted == false)
-    #expect(store.coreStatus == .missingCoreBinary)
+    #expect(!service.isProcessRunning)
+    #expect(service.status == .missingCoreBinary)
 }
 
 @Test func coreResolverPrefersExecutableBundledCandidates() throws {
