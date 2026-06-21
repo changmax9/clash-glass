@@ -20,6 +20,15 @@ public struct DashboardRowMetrics: Sendable {
     }
 }
 
+public enum DashboardTopRowLayoutMetrics {
+    public static let gap = 16.0
+    public static let networkSpeedHeight = DashboardRowMetrics.standardTotalHeight
+    public static let toggleCardHeight = DashboardRowMetrics(
+        totalHeight: networkSpeedHeight,
+        gap: gap
+    ).upperHeight
+}
+
 public enum OutboundModeLayoutMetrics {
     public static let cardHeight = DashboardRowMetrics.standardTotalHeight
     public static let cardPadding: Double = 14

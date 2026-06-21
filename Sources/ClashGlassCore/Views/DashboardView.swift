@@ -38,24 +38,20 @@ struct DashboardView: View {
         let contentWidth = DashboardPageMetrics(
             availableWidth: CGFloat(availableWidth)
         ).contentWidth
-        let gap: CGFloat = 16
+        let gap = CGFloat(DashboardTopRowLayoutMetrics.gap)
         let rightWidth = max(205, min(260, contentWidth * 0.28))
         let networkWidth = contentWidth - rightWidth - gap
         let columnWidth = (contentWidth - gap * 2) / 3
-        let tallHeight: CGFloat = 168
         let lowerRowHeight = CGFloat(DashboardRowMetrics.standardTotalHeight)
-        let rowMetrics = DashboardRowMetrics(
-            totalHeight: Double(lowerRowHeight),
-            gap: Double(gap)
-        )
-        let shortHeight = CGFloat(rowMetrics.upperHeight)
+        let topRowHeight = CGFloat(DashboardTopRowLayoutMetrics.networkSpeedHeight)
+        let shortHeight = CGFloat(DashboardTopRowLayoutMetrics.toggleCardHeight)
 
         return VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 16) {
+            HStack(alignment: .top, spacing: gap) {
                 NetworkSpeedCard(store: store)
-                    .frame(width: networkWidth, height: tallHeight)
+                    .frame(width: networkWidth, height: topRowHeight)
 
-                VStack(spacing: 16) {
+                VStack(spacing: gap) {
                     ToggleStatusCard(
                         title: InterfaceCopy.systemProxy,
                         symbol: "arrow.up.left.and.arrow.down.right",
@@ -78,7 +74,9 @@ struct DashboardView: View {
                     }
                     .frame(width: rightWidth, height: shortHeight)
                 }
+                .frame(width: rightWidth, height: topRowHeight, alignment: .top)
             }
+            .frame(height: topRowHeight, alignment: .top)
 
             HStack(alignment: .top, spacing: 16) {
                 DashboardLowerRowCell(

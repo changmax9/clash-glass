@@ -33,6 +33,20 @@ import Testing
     #expect(OutboundModeLayoutMetrics.cardHeight == DashboardRowMetrics.standardTotalHeight)
 }
 
+@Test func dashboardTopRowAlignsNetworkSpeedWithTunBottomEdge() {
+    let row = DashboardRowMetrics(
+        totalHeight: DashboardRowMetrics.standardTotalHeight,
+        gap: 16
+    )
+
+    #expect(DashboardTopRowLayoutMetrics.networkSpeedHeight == row.totalHeight)
+    #expect(DashboardTopRowLayoutMetrics.toggleCardHeight == row.upperHeight)
+    #expect(
+        DashboardTopRowLayoutMetrics.toggleCardHeight * 2 + row.gap
+            == DashboardTopRowLayoutMetrics.networkSpeedHeight
+    )
+}
+
 @Test func dashboardLayoutScalesDownInsteadOfOverflowingSmallWindows() {
     let layout = DashboardLayoutMetrics(availableWidth: 760, availableHeight: 520)
 
