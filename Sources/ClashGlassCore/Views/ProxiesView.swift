@@ -5,7 +5,6 @@ private enum ProxiesDisplayMode: String, CaseIterable, Identifiable {
     case list
 
     var id: Self { self }
-    var title: String { rawValue.capitalized }
 }
 
 struct ProxiesView: View {
@@ -23,7 +22,10 @@ struct ProxiesView: View {
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    PillSegment(values: ProxiesDisplayMode.allCases, selection: $displayMode) { $0.title }
+                    PillSegment(
+                        values: ProxiesDisplayMode.allCases,
+                        selection: $displayMode
+                    ) { displayModeTitle($0) }
                     Spacer()
                     if store.isLatencyTesting {
                         ProgressView(value: store.latencyTestProgress.fraction)
@@ -122,8 +124,8 @@ struct ProxiesView: View {
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
                             StatusChip(
                                 text: group.kind.isAutomatic
-                                    ? "\(store.text(.automatic)) · \(group.policy)"
-                                    : group.policy,
+                                    ? "\(store.text(.automatic)) · \(store.language.localizedProxyType(group.policy))"
+                                    : store.language.localizedProxyType(group.policy),
                                 symbol: group.kind.isAutomatic ? "bolt.horizontal.circle" : nil,
                                 tint: palette.rose
                             )
@@ -154,7 +156,11 @@ struct ProxiesView: View {
 
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 176), spacing: 10)], spacing: 10) {
                                 ForEach(group.nodes) { node in
-                                    ProxyNodeCard(node: node, isTesting: store.isLatencyTesting) {
+                                    ProxyNodeCard(
+                                        node: node,
+                                        displayRegion: store.language.localizedProxyType(node.region),
+                                        isTesting: store.isLatencyTesting
+                                    ) {
                                         Task {
                                             await store.selectProxyRemote(groupName: group.name, nodeName: node.name)
                                         }
@@ -179,7 +185,12 @@ struct ProxiesView: View {
             VStack(spacing: 0) {
                 ForEach(filteredGroups) { group in
                     ForEach(group.nodes) { node in
-                        ProxyNodeRow(group: group.name, node: node, isTesting: store.isLatencyTesting) {
+                        ProxyNodeRow(
+                            group: group.name,
+                            node: node,
+                            displayRegion: store.language.localizedProxyType(node.region),
+                            isTesting: store.isLatencyTesting
+                        ) {
                             Task {
                                 await store.selectProxyRemote(groupName: group.name, nodeName: node.name)
                             }
@@ -190,10 +201,18 @@ struct ProxiesView: View {
             }
         }
     }
+
+    private func displayModeTitle(_ mode: ProxiesDisplayMode) -> String {
+        switch mode {
+        case .tab: store.text(.tab)
+        case .list: store.text(.list)
+        }
+    }
 }
 
 private struct ProxyNodeCard: View {
     let node: ProxyNode
+    let displayRegion: String
     let isTesting: Bool
     let action: () -> Void
     @Environment(\.colorScheme) private var colorScheme
@@ -217,7 +236,7 @@ private struct ProxyNodeCard: View {
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(palette.primaryText)
                     .lineLimit(1)
-                Text(node.region)
+                Text(displayRegion)
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(palette.secondaryText)
                     .lineLimit(1)
@@ -258,6 +277,7 @@ private struct ProxyNodeCard: View {
 private struct ProxyNodeRow: View {
     let group: String
     let node: ProxyNode
+    let displayRegion: String
     let isTesting: Bool
     let action: () -> Void
     @Environment(\.colorScheme) private var colorScheme
@@ -279,7 +299,7 @@ private struct ProxyNodeRow: View {
                         .foregroundStyle(palette.tertiaryText)
                 }
                 Spacer()
-                StatusChip(text: node.region, symbol: nil)
+                StatusChip(text: displayRegion, symbol: nil)
                 Text(latencyText)
                     .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
                     .foregroundStyle(latencyColor(palette: palette))

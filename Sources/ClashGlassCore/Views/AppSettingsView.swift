@@ -102,7 +102,10 @@ public struct AppSettingsView: View {
         VStack(spacing: 14) {
             SettingsGroup(title: store.text(.about), symbol: "info.circle") {
                 SettingsValueRow(title: store.text(.version), value: appVersion)
-                SettingsValueRow(title: store.text(.engine), value: "Powered by Mihomo")
+                SettingsValueRow(
+                    title: store.text(.engine),
+                    value: store.text(.poweredByMihomo)
+                )
             }
 
             SettingsGroup(title: store.text(.legalNotice), symbol: "exclamationmark.shield") {

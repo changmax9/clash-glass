@@ -27,6 +27,17 @@ APP_BUILD="$BUILD_NUMBER" \
 BUILD_CONFIGURATION=release \
 "$ROOT_DIR/script/build_and_run.sh" --stage
 
+if [[ ! -x "$APP_BUNDLE/Contents/Resources/mihomo" ]]; then
+  echo "error: packaged app is missing the Mihomo core" >&2
+  exit 1
+fi
+for asset in geoip.dat geoip.metadb geosite.dat ASN.mmdb; do
+  if [[ ! -f "$APP_BUNDLE/Contents/Resources/GeoData/$asset" ]]; then
+    echo "error: packaged app is missing GeoData/$asset" >&2
+    exit 1
+  fi
+done
+
 rm -f "$DMG_PATH" "$APPCAST_PATH"
 /usr/bin/hdiutil create \
   -volname "Clash Glass" \

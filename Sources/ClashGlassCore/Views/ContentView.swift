@@ -39,7 +39,7 @@ public struct ContentView: View {
                 set: { if !$0 { store.lastErrorMessage = nil } }
             )
         ) {
-            Button("OK") {
+            Button(store.text(.ok)) {
                 store.lastErrorMessage = nil
             }
         } message: {
@@ -306,7 +306,7 @@ private struct MainStage: View {
                 self.renameProfileID = nil
             }
         } message: {
-            Text("This name is also shown in the menu bar panel.")
+            Text(store.text(.renameMenuBarNote))
         }
     }
 
@@ -342,12 +342,12 @@ private struct MainStage: View {
 
     private var coreRestartMessage: String {
         if store.isStarted {
-            return "Mihomo and the active VPN session will restart, then restore the current outbound mode."
+            return store.text(.restartActiveExplanation)
         }
         if store.isCoreRunning {
-            return "Mihomo's controller-only session will restart without enabling the system VPN."
+            return store.text(.restartControllerExplanation)
         }
-        return "Mihomo is stopped. Confirm to start the core in controller-only mode."
+        return store.text(.startControllerExplanation)
     }
 
     private func beginRenamingSelectedProfile() {

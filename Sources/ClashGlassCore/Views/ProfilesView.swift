@@ -94,10 +94,10 @@ struct ProfilesView: View {
                 self.renameProfileID = nil
             }
         } message: {
-            Text("The menu bar panel will use the new profile name.")
+            Text(store.text(.renameMenuBarNote))
         }
         .confirmationDialog(
-            "Delete \(profilePendingDeletion?.name ?? "Profile")?",
+            store.language.deleteProfilePrompt(name: profilePendingDeletion?.name),
             isPresented: Binding(
                 get: { profilePendingDeletion != nil },
                 set: { if !$0 { profilePendingDeletion = nil } }
@@ -113,7 +113,7 @@ struct ProfilesView: View {
                 profilePendingDeletion = nil
             }
         } message: {
-            Text("The managed YAML copy and its saved routing overrides will be removed.")
+            Text(store.text(.deleteProfileExplanation))
         }
     }
 

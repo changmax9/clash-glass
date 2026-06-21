@@ -77,6 +77,11 @@ preferences stay in `~/Library/Preferences`, while profiles and runtime data
 stay in `~/Library/Application Support/Clash Glass`; replacing the app bundle
 does not remove either location.
 
+Current community builds use ad-hoc code signing rather than Apple Developer ID
+notarization. macOS may require Control-clicking the app and choosing **Open**
+on first launch. Sparkle's EdDSA signature still verifies that later updates
+were produced with the project's private update key.
+
 ## Project layout
 
 - `Sources/ClashGlass` — macOS application entry point and menu bar host

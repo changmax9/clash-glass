@@ -69,10 +69,10 @@ struct ResourcesView: View {
             ]
         ) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 14)], spacing: 14) {
-                ResourceCard(title: "GEOIP", detail: "Country Database", status: store.text(.ready), symbol: "globe.asia.australia.fill")
-                ResourceCard(title: "GEOSITE", detail: "Domain Rule Database", status: store.text(.ready), symbol: "list.bullet.rectangle")
-                ResourceCard(title: "ASN", detail: "Autonomous System Database", status: store.text(.ready), symbol: "network")
-                ResourceCard(title: "MMDB", detail: "Metadata Database", status: store.text(.ready), symbol: "externaldrive.fill")
+                ResourceCard(title: "GEOIP", detail: store.text(.countryDatabase), status: store.text(.ready), symbol: "globe.asia.australia.fill")
+                ResourceCard(title: "GEOSITE", detail: store.text(.domainRuleDatabase), status: store.text(.ready), symbol: "list.bullet.rectangle")
+                ResourceCard(title: "ASN", detail: store.text(.autonomousSystemDatabase), status: store.text(.ready), symbol: "network")
+                ResourceCard(title: "MMDB", detail: store.text(.metadataDatabase), status: store.text(.ready), symbol: "externaldrive.fill")
             }
         }
     }

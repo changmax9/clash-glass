@@ -103,6 +103,31 @@ public enum AppString: String, CaseIterable, Sendable {
     case addDomainHint
     case start
     case pause
+    case tab
+    case list
+    case selector
+    case proxy
+    case urlTest
+    case fallback
+    case loadBalance
+    case profileStorageFormat
+    case selectProfileBeforeRules
+    case ruleCountSingular
+    case ruleCountPlural
+    case routingExplanation
+    case poweredByMihomo
+    case ok
+    case renameMenuBarNote
+    case restartActiveExplanation
+    case restartControllerExplanation
+    case startControllerExplanation
+    case deleteProfileFormat
+    case profile
+    case deleteProfileExplanation
+    case countryDatabase
+    case domainRuleDatabase
+    case autonomousSystemDatabase
+    case metadataDatabase
 }
 
 public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
@@ -150,6 +175,37 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     public func text(_ key: AppString) -> String {
         AppLocalization.text(key, language: resolvedLanguage)
+    }
+
+    public func localizedProxyType(_ rawValue: String) -> String {
+        let normalized = rawValue
+            .replacingOccurrences(of: "-", with: "")
+            .lowercased()
+        return switch normalized {
+        case "selector": text(.selector)
+        case "proxy": text(.proxy)
+        case "urltest": text(.urlTest)
+        case "fallback": text(.fallback)
+        case "loadbalance": text(.loadBalance)
+        default: rawValue
+        }
+    }
+
+    public func profileStorageDetail(name: String) -> String {
+        String(format: text(.profileStorageFormat), locale: locale, name)
+    }
+
+    public func ruleCount(_ count: Int) -> String {
+        let key: AppString = count == 1 ? .ruleCountSingular : .ruleCountPlural
+        return String(format: text(key), locale: locale, count)
+    }
+
+    public func deleteProfilePrompt(name: String?) -> String {
+        String(
+            format: text(.deleteProfileFormat),
+            locale: locale,
+            name ?? text(.profile)
+        )
     }
 
     private var resolvedLanguage: Self {
@@ -257,6 +313,21 @@ enum AppLocalization {
             .noMatchingRoutingRules: "No Matching Routing Rules",
             .addDomainHint: "Add a domain to choose VPN or Direct routing",
             .start: "Start", .pause: "Pause",
+            .tab: "Tab", .list: "List", .selector: "Selector", .proxy: "Proxy",
+            .urlTest: "URL Test", .fallback: "Fallback", .loadBalance: "Load Balance",
+            .profileStorageFormat: "Profile: %@ · saved separately from its YAML",
+            .selectProfileBeforeRules: "Select a managed profile before adding rules",
+            .ruleCountSingular: "%d rule", .ruleCountPlural: "%d rules",
+            .routingExplanation: "VPN rules use the profile's primary selectable proxy group. Direct rules bypass Mihomo's proxy chain.",
+            .poweredByMihomo: "Powered by Mihomo",
+            .ok: "OK", .renameMenuBarNote: "This name is also shown in the menu bar panel.",
+            .restartActiveExplanation: "Mihomo and the active VPN session will restart, then restore the current outbound mode.",
+            .restartControllerExplanation: "Mihomo's controller-only session will restart without enabling the system VPN.",
+            .startControllerExplanation: "Mihomo is stopped. Confirm to start the core in controller-only mode.",
+            .deleteProfileFormat: "Delete %@?", .profile: "Profile",
+            .deleteProfileExplanation: "The managed YAML copy and its saved routing overrides will be removed.",
+            .countryDatabase: "Country Database", .domainRuleDatabase: "Domain Rule Database",
+            .autonomousSystemDatabase: "Autonomous System Database", .metadataDatabase: "Metadata Database",
         ],
         .simplifiedChinese: [
             .settings: "设置", .settingsSubtitle: "个性化 Clash Glass 并查看应用信息。",
@@ -297,6 +368,21 @@ enum AppLocalization {
             .noMatchingRoutingRules: "没有匹配的路由规则",
             .addDomainHint: "添加域名并选择通过 VPN 或直连",
             .start: "启动", .pause: "暂停",
+            .tab: "标签", .list: "列表", .selector: "选择器", .proxy: "代理",
+            .urlTest: "自动测速", .fallback: "故障转移", .loadBalance: "负载均衡",
+            .profileStorageFormat: "配置：%@ · 独立保存，不修改原 YAML",
+            .selectProfileBeforeRules: "添加规则前请先选择一个托管配置",
+            .ruleCountSingular: "%d 条规则", .ruleCountPlural: "%d 条规则",
+            .routingExplanation: "VPN 规则使用配置中的主要可选代理组。直连规则会绕过 Mihomo 的代理链。",
+            .poweredByMihomo: "由 Mihomo 驱动",
+            .ok: "确定", .renameMenuBarNote: "新名称也会显示在菜单栏面板中。",
+            .restartActiveExplanation: "Mihomo 和当前 VPN 会话将重新启动，并恢复当前出站模式。",
+            .restartControllerExplanation: "Mihomo 控制器会重启，但不会启用系统 VPN。",
+            .startControllerExplanation: "Mihomo 当前已停止。确认后将以仅控制器模式启动核心。",
+            .deleteProfileFormat: "删除“%@”？", .profile: "配置",
+            .deleteProfileExplanation: "托管的 YAML 副本及其保存的路由规则将被删除。",
+            .countryDatabase: "国家与地区数据库", .domainRuleDatabase: "域名规则数据库",
+            .autonomousSystemDatabase: "自治系统数据库", .metadataDatabase: "元数据数据库",
         ],
         .traditionalChinese: [
             .settings: "設定", .settingsSubtitle: "個人化 Clash Glass 並檢視應用程式資訊。",
@@ -337,6 +423,21 @@ enum AppLocalization {
             .noMatchingRoutingRules: "沒有符合的路由規則",
             .addDomainHint: "新增網域並選擇透過 VPN 或直接連線",
             .start: "啟動", .pause: "暫停",
+            .tab: "分頁", .list: "列表", .selector: "選擇器", .proxy: "代理",
+            .urlTest: "自動測速", .fallback: "故障轉移", .loadBalance: "負載平衡",
+            .profileStorageFormat: "設定檔：%@ · 獨立儲存，不修改原 YAML",
+            .selectProfileBeforeRules: "新增規則前請先選擇一個託管設定檔",
+            .ruleCountSingular: "%d 條規則", .ruleCountPlural: "%d 條規則",
+            .routingExplanation: "VPN 規則使用設定檔中的主要可選代理群組。直連規則會略過 Mihomo 的代理鏈。",
+            .poweredByMihomo: "由 Mihomo 驅動",
+            .ok: "確定", .renameMenuBarNote: "新名稱也會顯示在選單列面板中。",
+            .restartActiveExplanation: "Mihomo 與目前的 VPN 工作階段將重新啟動，並恢復目前的出站模式。",
+            .restartControllerExplanation: "Mihomo 控制器將重新啟動，但不會啟用系統 VPN。",
+            .startControllerExplanation: "Mihomo 目前已停止。確認後將以僅控制器模式啟動核心。",
+            .deleteProfileFormat: "刪除「%@」？", .profile: "設定檔",
+            .deleteProfileExplanation: "託管的 YAML 副本及其已儲存的路由規則將被刪除。",
+            .countryDatabase: "國家與地區資料庫", .domainRuleDatabase: "網域規則資料庫",
+            .autonomousSystemDatabase: "自治系統資料庫", .metadataDatabase: "中繼資料資料庫",
         ],
         .japanese: [
             .settings: "設定", .settingsSubtitle: "Clash Glass の外観と言語、アプリ情報を管理します。",
@@ -378,6 +479,21 @@ enum AppLocalization {
             .noMatchingRoutingRules: "一致するルーティングルールがありません",
             .addDomainHint: "ドメインを追加して VPN または直接接続を選択",
             .start: "開始", .pause: "一時停止",
+            .tab: "タブ", .list: "リスト", .selector: "セレクター", .proxy: "プロキシ",
+            .urlTest: "URL テスト", .fallback: "フォールバック", .loadBalance: "負荷分散",
+            .profileStorageFormat: "プロファイル：%@ · 元の YAML とは別に保存",
+            .selectProfileBeforeRules: "ルールを追加する前に管理対象プロファイルを選択してください",
+            .ruleCountSingular: "%d 件のルール", .ruleCountPlural: "%d 件のルール",
+            .routingExplanation: "VPN ルールはプロファイルの主要な選択可能プロキシグループを使用します。直接接続ルールは Mihomo のプロキシチェーンを経由しません。",
+            .poweredByMihomo: "Mihomo を搭載",
+            .ok: "OK", .renameMenuBarNote: "新しい名前はメニューバーパネルにも表示されます。",
+            .restartActiveExplanation: "Mihomo と有効な VPN セッションを再起動し、現在の送信モードを復元します。",
+            .restartControllerExplanation: "システム VPN を有効にせず、Mihomo のコントローラーのみを再起動します。",
+            .startControllerExplanation: "Mihomo は停止中です。確認するとコントローラーのみのモードで起動します。",
+            .deleteProfileFormat: "「%@」を削除しますか？", .profile: "プロファイル",
+            .deleteProfileExplanation: "管理対象の YAML コピーと保存済みルーティングルールが削除されます。",
+            .countryDatabase: "国データベース", .domainRuleDatabase: "ドメインルールデータベース",
+            .autonomousSystemDatabase: "自律システムデータベース", .metadataDatabase: "メタデータデータベース",
         ],
         .french: [
             .settings: "Réglages", .settingsSubtitle: "Personnalisez Clash Glass et consultez les informations de l’application.",
@@ -421,6 +537,21 @@ enum AppLocalization {
             .deleteRule: "Supprimer la règle", .noMatchingRoutingRules: "Aucune règle correspondante",
             .addDomainHint: "Ajoutez un domaine et choisissez VPN ou Direct",
             .start: "Démarrer", .pause: "Pause",
+            .tab: "Onglet", .list: "Liste", .selector: "Sélecteur", .proxy: "Proxy",
+            .urlTest: "Test URL", .fallback: "Repli", .loadBalance: "Répartition de charge",
+            .profileStorageFormat: "Profil : %@ · enregistré séparément de son YAML",
+            .selectProfileBeforeRules: "Sélectionnez un profil géré avant d'ajouter des règles",
+            .ruleCountSingular: "%d règle", .ruleCountPlural: "%d règles",
+            .routingExplanation: "Les règles VPN utilisent le groupe proxy sélectionnable principal du profil. Les règles directes contournent la chaîne proxy de Mihomo.",
+            .poweredByMihomo: "Propulsé par Mihomo",
+            .ok: "OK", .renameMenuBarNote: "Ce nom apparaît également dans le panneau de la barre des menus.",
+            .restartActiveExplanation: "Mihomo et la session VPN active redémarreront, puis le mode de sortie actuel sera restauré.",
+            .restartControllerExplanation: "La session contrôleur de Mihomo redémarrera sans activer le VPN système.",
+            .startControllerExplanation: "Mihomo est arrêté. Confirmez pour démarrer le moteur en mode contrôleur uniquement.",
+            .deleteProfileFormat: "Supprimer « %@ » ?", .profile: "Profil",
+            .deleteProfileExplanation: "La copie YAML gérée et ses règles de routage enregistrées seront supprimées.",
+            .countryDatabase: "Base de données des pays", .domainRuleDatabase: "Base de règles de domaine",
+            .autonomousSystemDatabase: "Base des systèmes autonomes", .metadataDatabase: "Base de métadonnées",
         ],
         .russian: [
             .settings: "Настройки", .settingsSubtitle: "Настройте Clash Glass и просмотрите сведения о приложении.",
@@ -464,6 +595,21 @@ enum AppLocalization {
             .deleteRule: "Удалить правило", .noMatchingRoutingRules: "Нет подходящих правил",
             .addDomainHint: "Добавьте домен и выберите VPN или прямой маршрут",
             .start: "Запустить", .pause: "Пауза",
+            .tab: "Вкладки", .list: "Список", .selector: "Селектор", .proxy: "Прокси",
+            .urlTest: "URL-тест", .fallback: "Резерв", .loadBalance: "Балансировка",
+            .profileStorageFormat: "Профиль: %@ · хранится отдельно от исходного YAML",
+            .selectProfileBeforeRules: "Перед добавлением правил выберите управляемый профиль",
+            .ruleCountSingular: "%d правило", .ruleCountPlural: "%d правил",
+            .routingExplanation: "Правила VPN используют основную выбираемую прокси-группу профиля. Прямые правила обходят прокси-цепочку Mihomo.",
+            .poweredByMihomo: "На базе Mihomo",
+            .ok: "ОК", .renameMenuBarNote: "Новое имя также отображается в панели строки меню.",
+            .restartActiveExplanation: "Mihomo и активный VPN-сеанс будут перезапущены, после чего восстановится текущий режим выхода.",
+            .restartControllerExplanation: "Сеанс контроллера Mihomo будет перезапущен без включения системного VPN.",
+            .startControllerExplanation: "Mihomo остановлен. Подтвердите запуск ядра только в режиме контроллера.",
+            .deleteProfileFormat: "Удалить «%@»?", .profile: "Профиль",
+            .deleteProfileExplanation: "Управляемая копия YAML и сохранённые правила маршрутизации будут удалены.",
+            .countryDatabase: "База стран", .domainRuleDatabase: "База правил доменов",
+            .autonomousSystemDatabase: "База автономных систем", .metadataDatabase: "База метаданных",
         ],
         .spanish: [
             .settings: "Ajustes", .settingsSubtitle: "Personaliza Clash Glass y consulta la información de la aplicación.",
@@ -507,6 +653,21 @@ enum AppLocalization {
             .deleteRule: "Eliminar regla", .noMatchingRoutingRules: "No hay reglas coincidentes",
             .addDomainHint: "Añade un dominio y elige VPN o conexión directa",
             .start: "Iniciar", .pause: "Pausar",
+            .tab: "Pestañas", .list: "Lista", .selector: "Selector", .proxy: "Proxy",
+            .urlTest: "Prueba URL", .fallback: "Respaldo", .loadBalance: "Balanceo de carga",
+            .profileStorageFormat: "Perfil: %@ · guardado por separado de su YAML",
+            .selectProfileBeforeRules: "Selecciona un perfil gestionado antes de añadir reglas",
+            .ruleCountSingular: "%d regla", .ruleCountPlural: "%d reglas",
+            .routingExplanation: "Las reglas VPN usan el grupo proxy seleccionable principal del perfil. Las reglas directas omiten la cadena proxy de Mihomo.",
+            .poweredByMihomo: "Con tecnología de Mihomo",
+            .ok: "Aceptar", .renameMenuBarNote: "El nombre nuevo también aparecerá en el panel de la barra de menús.",
+            .restartActiveExplanation: "Mihomo y la sesión VPN activa se reiniciarán y después se restaurará el modo de salida actual.",
+            .restartControllerExplanation: "La sesión de controlador de Mihomo se reiniciará sin activar la VPN del sistema.",
+            .startControllerExplanation: "Mihomo está detenido. Confirma para iniciar el núcleo solo en modo controlador.",
+            .deleteProfileFormat: "¿Eliminar «%@»?", .profile: "Perfil",
+            .deleteProfileExplanation: "Se eliminarán la copia YAML gestionada y sus reglas de enrutamiento guardadas.",
+            .countryDatabase: "Base de datos de países", .domainRuleDatabase: "Base de reglas de dominio",
+            .autonomousSystemDatabase: "Base de sistemas autónomos", .metadataDatabase: "Base de metadatos",
         ],
         .portuguese: [
             .settings: "Definições", .settingsSubtitle: "Personalize o Clash Glass e consulte as informações da aplicação.",
@@ -550,6 +711,21 @@ enum AppLocalization {
             .deleteRule: "Eliminar regra", .noMatchingRoutingRules: "Sem regras correspondentes",
             .addDomainHint: "Adicione um domínio e escolha VPN ou ligação direta",
             .start: "Iniciar", .pause: "Pausar",
+            .tab: "Separadores", .list: "Lista", .selector: "Seletor", .proxy: "Proxy",
+            .urlTest: "Teste URL", .fallback: "Alternativa", .loadBalance: "Balanceamento",
+            .profileStorageFormat: "Perfil: %@ · guardado separadamente do respetivo YAML",
+            .selectProfileBeforeRules: "Selecione um perfil gerido antes de adicionar regras",
+            .ruleCountSingular: "%d regra", .ruleCountPlural: "%d regras",
+            .routingExplanation: "As regras VPN utilizam o grupo proxy selecionável principal do perfil. As regras diretas ignoram a cadeia proxy do Mihomo.",
+            .poweredByMihomo: "Desenvolvido com Mihomo",
+            .ok: "OK", .renameMenuBarNote: "O novo nome também aparece no painel da barra de menus.",
+            .restartActiveExplanation: "O Mihomo e a sessão VPN ativa serão reiniciados e o modo de saída atual será restaurado.",
+            .restartControllerExplanation: "A sessão de controlador do Mihomo será reiniciada sem ativar a VPN do sistema.",
+            .startControllerExplanation: "O Mihomo está parado. Confirme para iniciar o núcleo apenas no modo de controlador.",
+            .deleteProfileFormat: "Eliminar «%@»?", .profile: "Perfil",
+            .deleteProfileExplanation: "A cópia YAML gerida e as respetivas regras de encaminhamento guardadas serão eliminadas.",
+            .countryDatabase: "Base de dados de países", .domainRuleDatabase: "Base de regras de domínio",
+            .autonomousSystemDatabase: "Base de sistemas autónomos", .metadataDatabase: "Base de metadados",
         ],
     ]
 }

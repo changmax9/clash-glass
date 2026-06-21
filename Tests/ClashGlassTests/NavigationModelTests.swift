@@ -67,6 +67,23 @@ import Testing
     #expect(AppLanguage.portuguese.text(.settings) == "Definições")
 }
 
+@Test func localizedDynamicInterfaceCopyCoversProxyRoutingAndAboutSurfaces() {
+    let simplified = AppLanguage.simplifiedChinese
+    let traditional = AppLanguage.traditionalChinese
+    let japanese = AppLanguage.japanese
+
+    #expect(simplified.text(.tab) == "标签")
+    #expect(traditional.text(.list) == "列表")
+    #expect(japanese.text(.selector) == "セレクター")
+    #expect(simplified.localizedProxyType("Selector") == "选择器")
+    #expect(traditional.localizedProxyType("Proxy") == "代理")
+    #expect(simplified.profileStorageDetail(name: "Mutdot") == "配置：Mutdot · 独立保存，不修改原 YAML")
+    #expect(traditional.ruleCount(1) == "1 條規則")
+    #expect(traditional.ruleCount(2) == "2 條規則")
+    #expect(simplified.text(.routingExplanation).contains("直连规则"))
+    #expect(traditional.text(.poweredByMihomo) == "由 Mihomo 驅動")
+}
+
 @Test func systemAppearanceResolvesFromTheLiveMacOSScheme() {
     #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .light) == .light)
     #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .dark) == .dark)

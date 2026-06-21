@@ -41,15 +41,15 @@ struct RoutingView: View {
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                         Text(
                             store.selectedManagedProfile.map {
-                                "Profile: \($0.name) · saved separately from its YAML"
-                            } ?? "Select a managed profile before adding rules"
+                                store.language.profileStorageDetail(name: $0.name)
+                            } ?? store.text(.selectProfileBeforeRules)
                         )
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.secondaryText)
                     }
                     Spacer()
                     StatusChip(
-                        text: "\(store.routingOverrides.count) rules",
+                        text: store.language.ruleCount(store.routingOverrides.count),
                         symbol: "list.bullet"
                     )
                 }
@@ -92,7 +92,7 @@ struct RoutingView: View {
                     )
                 }
 
-                Text("VPN rules use the profile's primary selectable proxy group. Direct rules bypass Mihomo's proxy chain.")
+                Text(store.text(.routingExplanation))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(palette.tertiaryText)
             }

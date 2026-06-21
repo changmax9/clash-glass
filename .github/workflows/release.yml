@@ -19,6 +19,9 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
 
+      - name: Download Mihomo runtime
+        run: ./script/bootstrap.sh
+
       - name: Build signed update assets
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
@@ -32,8 +35,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${GITHUB_REF_NAME#v}"
+          cat > dist/release-notes.md <<EOF
+          ## Clash Glass $version
+
+          - Native macOS client powered by Mihomo
+          - Signed Sparkle update feed and DMG download
+          - Preferences and managed profiles remain outside the app bundle
+
+          ### Installation
+
+          This community build is distributed without Apple Developer ID
+          notarization. If macOS blocks the first launch, Control-click the app,
+          choose **Open**, and confirm. Sparkle updates are independently
+          protected with an EdDSA signature.
+          EOF
           gh release create "$GITHUB_REF_NAME" \
             "dist/ClashGlass-$version.dmg" \
             "dist/appcast.xml" \
             --title "Clash Glass $version" \
-            --generate-notes
+            --notes-file "dist/release-notes.md"
