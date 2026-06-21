@@ -1,0 +1,270 @@
+import Foundation
+import Testing
+@testable import ClashGlassCore
+
+@Test func primaryApplicationSectionsStayInOrder() {
+    #expect(AppSection.allCases.map(\.title) == [
+        "Dashboard",
+        "Proxies",
+        "Routing",
+        "Profiles",
+        "Requests",
+        "Connections",
+        "Resources",
+        "Logs",
+        "Tools",
+        "Settings",
+    ])
+}
+
+@MainActor
+@Test func appStoreStartsWithoutPrototypeSampleData() throws {
+    let rootURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: rootURL) }
+    let repository = ManagedProfileRepository(rootURL: rootURL)
+    let store = AppStore(profileRepository: repository)
+
+    #expect(store.selectedProfile == "No Profile")
+    #expect(store.proxyGroups.isEmpty)
+    #expect(store.connections.isEmpty)
+    #expect(store.logs.isEmpty)
+}
+
+@Test func railSettingsButtonOpensSettingsDirectly() {
+    #expect(RailSettingsInteractionPolicy.opensSettingsDirectly)
+    #expect(!RailSettingsInteractionPolicy.showsSecondaryMenu)
+    #expect(RailSettingsInteractionPolicy.targetsMainWindowSection)
+    #expect(!RailSettingsInteractionPolicy.opensSeparateScene)
+    #expect(RailSettingsInteractionPolicy.targetSection == .settings)
+}
+
+@Test func coreStatusPresentationDistinguishesControllerOnlyFromStopped() {
+    #expect(CoreStatusPresentation.runtimeText(isStarted: true, isCoreRunning: true) == "VPN Active")
+    #expect(CoreStatusPresentation.runtimeText(isStarted: false, isCoreRunning: true) == "Controller Running")
+    #expect(CoreStatusPresentation.runtimeText(isStarted: false, isCoreRunning: false) == "Stopped")
+}
+
+@Test func toolbarControlsMatchTheReferencePaletteAndAlignment() {
+    #expect(ToolbarControlAppearancePolicy.runningCoreSymbol == "checkmark")
+    #expect(ToolbarControlAppearancePolicy.stoppedCoreSymbol == "arrow.clockwise")
+    #expect(!ToolbarControlAppearancePolicy.runningCoreUsesSolidGreenSurface)
+    #expect(!ToolbarControlAppearancePolicy.runningCoreUsesWhiteSymbol)
+    #expect(ToolbarControlAppearancePolicy.quickEditUsesNativeMenu)
+    #expect(!ToolbarControlAppearancePolicy.quickEditUsesPlainIcon)
+    #expect(ToolbarControlAppearancePolicy.quickEditUsesCompactGlassSurface)
+    #expect(ToolbarControlAppearancePolicy.quickEditKeepsSurfaceOutsideNativeMenuLabel)
+    #expect(!ToolbarControlAppearancePolicy.quickEditVisualSurfaceAllowsHitTesting)
+    #expect(!ToolbarControlAppearancePolicy.quickEditHitLayerUsesVisibleAlpha)
+    #expect(ToolbarControlAppearancePolicy.quickEditUsesSingleInteractiveSurface)
+    #expect(ToolbarControlAppearancePolicy.quickEditUsesAppKitMenuBridge)
+    #expect(ToolbarControlAppearancePolicy.quickEditSymbol == "pencil")
+    #expect(ToolbarControlMetrics.visibleSize == 34)
+    #expect(ToolbarControlMetrics.hitTarget == 40)
+    #expect(ToolbarControlAppearancePolicy.controlCornerRadius == 11)
+}
+
+@Test func pageNavigationUsesOneSharedFadeTransition() {
+    #expect(PageNavigationTransitionPolicy.appliesToEverySectionChange)
+    #expect(PageNavigationTransitionPolicy.usesOpacityTransition)
+    #expect(PageNavigationTransitionPolicy.respectsReducedMotion)
+    #expect(PageNavigationTransitionPolicy.duration == 0.20)
+}
+
+@Test func proxiesToolbarKeepsOnlyOneRefreshAndLatencyEntryPoint() {
+    #expect(ProxiesToolbarPolicy.refreshIncludesLatencyTesting)
+    #expect(!ProxiesToolbarPolicy.showsSeparateDelayTestAction)
+    #expect(ProxiesToolbarPolicy.actionTitles == [
+        "Refresh",
+        "Providers",
+        "Settings",
+    ])
+}
+
+@MainActor
+@Test func dashboardControlsUpdateRuntimeState() {
+    let store = AppStore()
+
+    #expect(store.isStarted == false)
+    store.toggleStarted()
+    #expect(store.isStarted == true)
+
+    let initialSystemProxyState = store.isSystemProxyEnabled
+    store.toggleSystemProxy()
+    #expect(store.isSystemProxyEnabled == !initialSystemProxyState)
+
+    let initialTunState = store.isTunEnabled
+    store.toggleTun()
+    #expect(store.isTunEnabled == !initialTunState)
+
+    store.selectOutboundMode(.global)
+    #expect(store.selectedMode == .global)
+}
+
+@Test func liquidControlMotionUsesStableHoverAndPressScales() {
+    #expect(LiquidControlMotion.scale(isHovering: false, isPressed: false, reduceMotion: false) == 1)
+    #expect(LiquidControlMotion.scale(isHovering: true, isPressed: false, reduceMotion: false) == 1.025)
+    #expect(LiquidControlMotion.scale(isHovering: true, isPressed: true, reduceMotion: false) == 0.975)
+    #expect(LiquidControlMotion.scale(isHovering: true, isPressed: true, reduceMotion: true) == 1)
+    #expect(LiquidControlInteractionPolicy.usesNativeButtonPressState)
+    #expect(!LiquidControlInteractionPolicy.usesSupplementalDragGesture)
+    #expect(!LiquidControlInteractionPolicy.nestsInteractiveGlassInsideButton)
+    #expect(LiquidControlInteractionPolicy.usesNativeButtonAction)
+    #expect(!LiquidControlInteractionPolicy.triggersActionOnPressDown)
+    #expect(LiquidControlInteractionPolicy.minimumHitTarget >= 40)
+    #expect(ToolbarControlMetrics.visibleSize == 34)
+    #expect(ToolbarControlMetrics.hitTarget > ToolbarControlMetrics.visibleSize)
+}
+
+@Test func railUsesAFullWidthPointerTargetAndKeepsSettingsAboveTheWindowEdge() {
+    #expect(RailHitTargetMetrics.width == 74)
+    #expect(RailHitTargetMetrics.height >= 44)
+    #expect(RailHitTargetMetrics.settingsBottomInset >= 56)
+}
+
+@Test func glassCardMotionProvidesIndependentHoverLift() {
+    #expect(GlassCardMotion.scale(isHovering: false, reduceMotion: false) == 1)
+    #expect(GlassCardMotion.scale(isHovering: true, reduceMotion: false) == 1.004)
+    #expect(GlassCardMotion.verticalOffset(isHovering: true, reduceMotion: false) == -1)
+    #expect(GlassCardMotion.shadowOpacity(isHovering: false, reduceMotion: false) == 0)
+    #expect(GlassCardMotion.shadowOpacity(isHovering: true, reduceMotion: false) == 0.12)
+    #expect(GlassCardMotion.shadowOpacity(isHovering: true, reduceMotion: true) == 0.08)
+    #expect(GlassCardMotion.scale(isHovering: true, reduceMotion: true) == 1)
+    #expect(GlassCardMotion.verticalOffset(isHovering: true, reduceMotion: true) == 0)
+}
+
+@Test func glassCardReservesEnoughOverflowForAnUnclippedHoverHalo() {
+    #expect(GlassCardVisualMetrics.usesStableGlassMaterial)
+    #expect(GlassCardVisualMetrics.clipsContentToRoundedShape)
+    #expect(GlassCardVisualMetrics.overflowAllowance >= GlassCardVisualMetrics.shadowRadius)
+    #expect(
+        GlassCardVisualMetrics.overflowAllowance
+            >= GlassCardVisualMetrics.shadowRadius + abs(GlassCardVisualMetrics.shadowVerticalOffset)
+    )
+    #expect(PageSurfaceMetrics.horizontalInset >= GlassCardVisualMetrics.minimumPageInset)
+    #expect(PageSurfaceMetrics.topInset >= GlassCardVisualMetrics.minimumPageInset)
+}
+
+@Test func featurePagesKeepContentAwayFromEveryStageEdge() {
+    #expect(PageSurfaceMetrics.horizontalInset == 28)
+    #expect(PageSurfaceMetrics.topInset == 28)
+    #expect(PageSurfaceMetrics.contentWidth(availableWidth: 854) == 798)
+}
+
+@Test func railHoverTracksOnlyThePointerTarget() {
+    var hoverState = RailHoverState()
+    let dashboard = RailItem.section(.dashboard)
+    let profiles = RailItem.section(.profiles)
+
+    hoverState.update(item: dashboard, isHovering: true)
+    #expect(hoverState.hoveredItem == dashboard)
+
+    hoverState.update(item: profiles, isHovering: true)
+    #expect(hoverState.hoveredItem == profiles)
+
+    hoverState.update(item: dashboard, isHovering: false)
+    #expect(hoverState.hoveredItem == profiles)
+
+    hoverState.update(item: profiles, isHovering: false)
+    #expect(hoverState.hoveredItem == nil)
+}
+
+@Test func railItemsStayPlainUntilSelectedOrHovered() {
+    let dashboard = RailItem.section(.dashboard)
+    let profiles = RailItem.section(.profiles)
+    let selected = RailItemPresentation(
+        item: dashboard,
+        selectedSection: .dashboard,
+        hoveredItem: nil,
+        reduceMotion: false
+    )
+    let idle = RailItemPresentation(
+        item: profiles,
+        selectedSection: .dashboard,
+        hoveredItem: nil,
+        reduceMotion: false
+    )
+    let hovered = RailItemPresentation(
+        item: profiles,
+        selectedSection: .dashboard,
+        hoveredItem: profiles,
+        reduceMotion: false
+    )
+
+    #expect(selected.showsSelectionBackground)
+    #expect(selected.scale == 1)
+    #expect(!idle.showsSelectionBackground)
+    #expect(idle.scale == 1)
+    #expect(!hovered.showsSelectionBackground)
+    #expect(hovered.scale == 1.08)
+}
+
+@Test func railSelectionFollowsEveryNavigationEntryPoint() {
+    #expect(RailSelectionMotion.appliesToExternalSectionChanges)
+    #expect(RailSelectionMotion.usesMatchedGeometry)
+    #expect(RailSelectionMotion.respectsReducedMotion)
+
+    #expect(RailSelectionResolver.item(for: .dashboard) == .section(.dashboard))
+    #expect(RailSelectionResolver.item(for: .resources) == .section(.proxies))
+    #expect(RailSelectionResolver.item(for: .logs) == .section(.tools))
+    #expect(RailSelectionResolver.item(for: .routing) == .section(.routing))
+    #expect(RailSelectionResolver.item(for: .profiles) == .section(.profiles))
+    #expect(RailSelectionResolver.item(for: .settings) == .settings)
+}
+
+@Test func secondaryPagesKeepTheirParentRailItemSelected() {
+    let resourcesPresentation = RailItemPresentation(
+        item: .section(.proxies),
+        selectedSection: .resources,
+        hoveredItem: nil,
+        reduceMotion: false
+    )
+    let logsPresentation = RailItemPresentation(
+        item: .section(.tools),
+        selectedSection: .logs,
+        hoveredItem: nil,
+        reduceMotion: false
+    )
+
+    #expect(resourcesPresentation.showsSelectionBackground)
+    #expect(logsPresentation.showsSelectionBackground)
+}
+
+@Test func railUsesTheWindowBackgroundAndDrawsAboveTheMainStage() {
+    #expect(RailSurfaceMetrics.usesSystemGlassSelection == false)
+    #expect(RailSurfaceMetrics.backgroundMatchesWindow)
+    #expect(RailSurfaceMetrics.railZIndex > RailSurfaceMetrics.stageZIndex)
+    #expect(
+        RailSurfaceMetrics.selectionShadowRadius
+            <= RailSurfaceMetrics.selectionTrailingClearance
+    )
+}
+
+@Test func selectionIndicatorMovesWithoutMovingItsLabel() {
+    #expect(SelectionControlMotion.indicatorScale(
+        isHovering: false,
+        isPressed: false,
+        reduceMotion: false
+    ) == 1)
+    #expect(SelectionControlMotion.indicatorScale(
+        isHovering: true,
+        isPressed: false,
+        reduceMotion: false
+    ) == 1.08)
+    #expect(SelectionControlMotion.indicatorScale(
+        isHovering: true,
+        isPressed: true,
+        reduceMotion: false
+    ) == 0.92)
+    #expect(SelectionControlMotion.indicatorScale(
+        isHovering: true,
+        isPressed: true,
+        reduceMotion: true
+    ) == 1)
+    #expect(SelectionControlMotion.labelScale == 1)
+    #expect(ModeRowInteractionPolicy.usesFullRowHitTarget)
+    #expect(ModeRowInteractionPolicy.animatesIndicatorOnly)
+    #expect(ModeRowInteractionPolicy.usesNativeButtonAction)
+    #expect(!ModeRowInteractionPolicy.triggersActionOnPressDown)
+    #expect(ModeRowInteractionPolicy.minimumHitHeight >= 40)
+}

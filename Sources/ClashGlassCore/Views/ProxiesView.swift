@@ -1,0 +1,306 @@
+import SwiftUI
+
+private enum ProxiesDisplayMode: String, CaseIterable, Identifiable {
+    case tab
+    case list
+
+    var id: Self { self }
+    var title: String { rawValue.capitalized }
+}
+
+struct ProxiesView: View {
+    @Bindable var store: AppStore
+    @State private var query = ""
+    @State private var displayMode: ProxiesDisplayMode = .tab
+    @State private var expansionState = ProxyGroupExpansionState()
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        FeaturePage(
+            searchText: $query,
+            placeholder: "Search Proxies",
+            actions: toolbarActions
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    PillSegment(values: ProxiesDisplayMode.allCases, selection: $displayMode) { $0.title }
+                    Spacer()
+                    if store.isLatencyTesting {
+                        ProgressView(value: store.latencyTestProgress.fraction)
+                            .progressViewStyle(.linear)
+                            .frame(width: 72)
+                        StatusChip(
+                            text: store.latencyTestProgress.text,
+                            symbol: "waveform.path.ecg"
+                        )
+                    } else {
+                        StatusChip(text: "\(filteredGroups.reduce(0) { $0 + $1.nodes.count }) nodes", symbol: "point.3.connected.trianglepath.dotted")
+                    }
+                }
+
+                if displayMode == .tab {
+                    tabContent
+                } else {
+                    listContent
+                }
+            }
+        }
+    }
+
+    private var toolbarActions: [FeatureAction] {
+        var actions = [
+            FeatureAction(
+                title: store.isLatencyTesting ? store.latencyTestProgress.text : "Refresh",
+                symbol: store.isLatencyTesting ? "hourglass" : "arrow.clockwise",
+                isDisabled: store.isLatencyTesting
+            ) {
+                Task { await store.refreshProxiesAndLatency() }
+            },
+        ]
+
+        if ProxiesToolbarPolicy.showsSeparateDelayTestAction {
+            actions.append(
+                FeatureAction(
+                    title: "Delay Test",
+                    symbol: "speedometer",
+                    isDisabled: store.isLatencyTesting
+                ) {
+                    Task { await store.delayTestAll() }
+                }
+            )
+        }
+
+        actions.append(
+            FeatureAction(title: "Providers", symbol: "chart.bar.doc.horizontal") {
+                store.selectedSection = .resources
+            }
+        )
+        actions.append(
+            FeatureAction(title: "Settings", symbol: "slider.horizontal.3") {
+                store.selectedSection = .settings
+            }
+        )
+        return actions
+    }
+
+    private var filteredGroups: [ProxyGroup] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return store.proxyGroups
+        }
+        return store.proxyGroups.compactMap { group in
+            let nodes = group.nodes.filter {
+                $0.name.localizedCaseInsensitiveContains(trimmed)
+                || $0.region.localizedCaseInsensitiveContains(trimmed)
+                || group.name.localizedCaseInsensitiveContains(trimmed)
+            }
+            guard !nodes.isEmpty else { return nil }
+            return ProxyGroup(
+                name: group.name,
+                policy: group.policy,
+                kind: group.kind,
+                testURL: group.testURL,
+                nodes: nodes
+            )
+        }
+    }
+
+    private var tabContent: some View {
+        let palette = GlassPalette(colorScheme: colorScheme)
+        return VStack(alignment: .leading, spacing: 14) {
+            ForEach(filteredGroups) { group in
+                let isExpanded = expansionState.isExpanded(group.name)
+                GlassCard(radius: 16, padding: 0) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.stack.3d.down.right.fill")
+                                .font(.system(size: 15, weight: .bold))
+                            Text(group.name)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                            StatusChip(
+                                text: group.kind.isAutomatic ? "Automatic · \(group.policy)" : group.policy,
+                                symbol: group.kind.isAutomatic ? "bolt.horizontal.circle" : nil,
+                                tint: palette.rose
+                            )
+                            Spacer()
+                            StatusChip(text: "\(group.nodes.count)", symbol: "server.rack")
+                            Button {
+                                withAnimation(.spring(response: 0.30, dampingFraction: 0.78)) {
+                                    expansionState.toggle(group.name)
+                                }
+                            } label: {
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .frame(width: 24, height: 24)
+                                    .rotationEffect(.degrees(isExpanded ? 0 : -90))
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Circle())
+                            .help(isExpanded ? "Collapse \(group.name)" : "Expand \(group.name)")
+                        }
+                        .foregroundStyle(palette.secondaryText)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+
+                        if isExpanded {
+                            Divider().opacity(0.16)
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 176), spacing: 10)], spacing: 10) {
+                                ForEach(group.nodes) { node in
+                                    ProxyNodeCard(node: node, isTesting: store.isLatencyTesting) {
+                                        Task {
+                                            await store.selectProxyRemote(groupName: group.name, nodeName: node.name)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(12)
+                            .transition(
+                                .opacity.combined(
+                                    with: .move(edge: .top)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var listContent: some View {
+        GlassCard(radius: 16, padding: 0) {
+            VStack(spacing: 0) {
+                ForEach(filteredGroups) { group in
+                    ForEach(group.nodes) { node in
+                        ProxyNodeRow(group: group.name, node: node, isTesting: store.isLatencyTesting) {
+                            Task {
+                                await store.selectProxyRemote(groupName: group.name, nodeName: node.name)
+                            }
+                        }
+                        Divider().padding(.leading, 46).opacity(0.14)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct ProxyNodeCard: View {
+    let node: ProxyNode
+    let isTesting: Bool
+    let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isHovering = false
+
+    var body: some View {
+        let palette = GlassPalette(colorScheme: colorScheme)
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Image(systemName: node.isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(node.isSelected ? palette.green : palette.tertiaryText)
+                    Spacer()
+                    Text(latencyText)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(latencyColor(palette: palette))
+                }
+                Text(node.name)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(palette.primaryText)
+                    .lineLimit(1)
+                Text(node.region)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(palette.secondaryText)
+                    .lineLimit(1)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+            .background(
+                node.isSelected ? palette.selectionFill : palette.cardFill,
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(node.isSelected ? palette.selectionStroke : palette.cardStroke, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isHovering && !reduceMotion ? 1.018 : 1)
+        .offset(y: isHovering && !reduceMotion ? -1.5 : 0)
+        .brightness(isHovering ? 0.02 : 0)
+        .shadow(color: .black.opacity(isHovering && !reduceMotion ? 0.10 : 0), radius: 9, y: 5)
+        .onHover { isHovering = $0 }
+        .animation(.spring(response: 0.26, dampingFraction: 0.72), value: isHovering)
+        .animation(.spring(response: 0.24, dampingFraction: 0.78), value: node.isSelected)
+    }
+
+    private var latencyText: String {
+        node.latency.map { "\($0) ms" } ?? (isTesting ? "…" : "—")
+    }
+
+    private func latencyColor(palette: GlassPalette) -> Color {
+        guard let latency = node.latency else {
+            return palette.tertiaryText
+        }
+        return latency < 180 ? palette.green : .orange
+    }
+}
+
+private struct ProxyNodeRow: View {
+    let group: String
+    let node: ProxyNode
+    let isTesting: Bool
+    let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+
+    var body: some View {
+        let palette = GlassPalette(colorScheme: colorScheme)
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: node.isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(node.isSelected ? palette.green : palette.secondaryText)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(node.name)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                    Text(group)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.tertiaryText)
+                }
+                Spacer()
+                StatusChip(text: node.region, symbol: nil)
+                Text(latencyText)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(latencyColor(palette: palette))
+                    .frame(width: 58, alignment: .trailing)
+            }
+            .foregroundStyle(palette.primaryText)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(
+                node.isSelected
+                    ? palette.selectionFill
+                    : isHovering ? palette.selectionHover : Color.clear,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+        .animation(.spring(response: 0.24, dampingFraction: 0.76), value: isHovering)
+    }
+
+    private var latencyText: String {
+        node.latency.map { "\($0) ms" } ?? (isTesting ? "…" : "—")
+    }
+
+    private func latencyColor(palette: GlassPalette) -> Color {
+        guard let latency = node.latency else {
+            return palette.tertiaryText
+        }
+        return latency < 180 ? palette.green : .orange
+    }
+}

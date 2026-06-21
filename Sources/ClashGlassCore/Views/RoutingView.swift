@@ -1,0 +1,181 @@
+import SwiftUI
+
+struct RoutingView: View {
+    @Bindable var store: AppStore
+    @State private var query = ""
+    @State private var input = ""
+    @State private var policy: RoutingPolicy = .vpn
+    @State private var isSaving = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        FeaturePage(
+            searchText: $query,
+            placeholder: "Search Routing",
+            actions: []
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                editorCard
+
+                if filteredOverrides.isEmpty {
+                    EmptyGlassState(
+                        title: store.routingOverrides.isEmpty
+                            ? "Add a domain to choose VPN or Direct routing"
+                            : "No Matching Routing Rules",
+                        symbol: "arrow.triangle.branch"
+                    )
+                } else {
+                    rulesCard
+                }
+            }
+        }
+    }
+
+    private var editorCard: some View {
+        let palette = GlassPalette(colorScheme: colorScheme)
+        return GlassCard(radius: 16, padding: 16) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Domain Routing")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                        Text(
+                            store.selectedManagedProfile.map {
+                                "Profile: \($0.name) · saved separately from its YAML"
+                            } ?? "Select a managed profile before adding rules"
+                        )
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.secondaryText)
+                    }
+                    Spacer()
+                    StatusChip(
+                        text: "\(store.routingOverrides.count) rules",
+                        symbol: "list.bullet"
+                    )
+                }
+
+                HStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "link")
+                            .foregroundStyle(palette.tertiaryText)
+                        TextField("https://example.com/path or example.com", text: $input)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .onSubmit(addRule)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(
+                        palette.selectionTrack,
+                        in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .strokeBorder(palette.selectionStroke.opacity(0.48), lineWidth: 0.8)
+                    }
+
+                    PillSegment(
+                        values: RoutingPolicy.allCases,
+                        selection: $policy
+                    ) { $0.title }
+
+                    LiquidActionButton(
+                        title: isSaving ? "Saving" : "Add Rule",
+                        symbol: isSaving ? "hourglass" : "plus"
+                    ) {
+                        addRule()
+                    }
+                    .disabled(
+                        isSaving
+                            || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || store.selectedManagedProfileID == nil
+                    )
+                }
+
+                Text("VPN rules use the profile's primary selectable proxy group. Direct rules bypass Mihomo's proxy chain.")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(palette.tertiaryText)
+            }
+        }
+    }
+
+    private var rulesCard: some View {
+        GlassCard(radius: 16, padding: 0) {
+            VStack(spacing: 0) {
+                ForEach(filteredOverrides) { routingOverride in
+                    RoutingOverrideRow(routingOverride: routingOverride) {
+                        Task {
+                            await store.removeRoutingOverride(domain: routingOverride.domain)
+                        }
+                    }
+                    if routingOverride.id != filteredOverrides.last?.id {
+                        Divider().padding(.leading, 48).opacity(0.12)
+                    }
+                }
+            }
+        }
+    }
+
+    private var filteredOverrides: [RoutingOverride] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return store.routingOverrides
+        }
+        return store.routingOverrides.filter {
+            $0.domain.localizedCaseInsensitiveContains(trimmed)
+                || $0.policy.title.localizedCaseInsensitiveContains(trimmed)
+        }
+    }
+
+    private func addRule() {
+        guard !isSaving else {
+            return
+        }
+        isSaving = true
+        Task {
+            await store.addRoutingOverride(input: input, policy: policy)
+            if store.lastErrorMessage == nil {
+                input = ""
+            }
+            isSaving = false
+        }
+    }
+}
+
+private struct RoutingOverrideRow: View {
+    let routingOverride: RoutingOverride
+    let delete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let palette = GlassPalette(colorScheme: colorScheme)
+        HStack(spacing: 12) {
+            Image(systemName: routingOverride.policy == .vpn ? "lock.shield.fill" : "arrow.right")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(routingOverride.policy == .vpn ? palette.rose : palette.green)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(routingOverride.domain)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text("DOMAIN-SUFFIX → \(routingOverride.policy.title)")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(palette.tertiaryText)
+            }
+            Spacer()
+            StatusChip(
+                text: routingOverride.policy.title,
+                symbol: routingOverride.policy == .vpn ? "network.badge.shield.half.filled" : nil,
+                tint: routingOverride.policy == .vpn ? palette.rose : palette.green
+            )
+            LiquidIconButton(
+                title: "Delete Rule",
+                symbol: "trash",
+                tint: .red.opacity(0.16),
+                size: 28,
+                action: delete
+            )
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+    }
+}
