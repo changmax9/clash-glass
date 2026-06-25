@@ -69,6 +69,7 @@ public final class AppStore {
     public var uploadTrafficUnit = "B"
     public var downloadTrafficUnit = "B"
     public var lastErrorMessage: String?
+    public private(set) var profileValidationStates: [ManagedProfile.ID: ProfileValidationState] = [:]
     var isLatencyTesting = false
     var latencyTestProgress = LatencyTestProgress(completed: 0, total: 0)
     public var dashboardWidgets = DashboardWidgetKind.defaultOrder
@@ -147,6 +148,10 @@ public final class AppStore {
         profileRepository.rootURL.appendingPathComponent("Profiles", isDirectory: true)
     }
 
+    public func validationState(for id: ManagedProfile.ID) -> ProfileValidationState {
+        profileValidationStates[id] ?? .notValidated
+    }
+
     public func importManagedProfile(from sourceURL: URL) async {
         do {
             let profile = try await profileRepository.importProfile(from: sourceURL) { [coreService] stagedURL in
@@ -156,6 +161,7 @@ public final class AppStore {
             reloadManagedProfiles()
             reloadRoutingOverrides()
             synchronizeConfiguration(from: profile.managedConfigURL)
+            profileValidationStates[profile.id] = .valid()
             lastErrorMessage = nil
         } catch {
             lastErrorMessage = error.localizedDescription
@@ -192,6 +198,7 @@ public final class AppStore {
         do {
             try profileRepository.remove(id)
             try? routingOverrideRepository.removeProfile(id)
+            profileValidationStates.removeValue(forKey: id)
             reloadManagedProfiles()
             reloadRoutingOverrides()
             if let profile = selectedManagedProfile {
@@ -218,25 +225,32 @@ public final class AppStore {
             lastErrorMessage = ManagedProfileError.profileNotFound.localizedDescription
             return
         }
+        profileValidationStates[id] = .checking
         switch await coreService.validateConfig(path: profile.managedConfigURL.path) {
         case .success:
+            profileValidationStates[id] = .valid()
             lastErrorMessage = nil
         case let .failure(message):
+            profileValidationStates[id] = .invalid(message)
             lastErrorMessage = message
         }
     }
 
     public func validateAllManagedProfiles() async {
+        var firstFailure: String?
         for profile in managedProfiles {
+            profileValidationStates[profile.id] = .checking
             switch await coreService.validateConfig(path: profile.managedConfigURL.path) {
             case .success:
-                continue
+                profileValidationStates[profile.id] = .valid()
             case let .failure(message):
-                lastErrorMessage = "\(profile.name): \(message)"
-                return
+                profileValidationStates[profile.id] = .invalid(message)
+                if firstFailure == nil {
+                    firstFailure = "\(profile.name): \(message)"
+                }
             }
         }
-        lastErrorMessage = nil
+        lastErrorMessage = firstFailure
     }
 
     public func clearLogs() {
@@ -952,6 +966,10 @@ public final class AppStore {
         do {
             managedProfiles = try profileRepository.loadProfiles()
             selectedManagedProfileID = try profileRepository.selectedProfileID()
+            let managedProfileIDs = Set(managedProfiles.map(\.id))
+            profileValidationStates = profileValidationStates.filter {
+                managedProfileIDs.contains($0.key)
+            }
             if let selectedManagedProfile {
                 selectedProfile = selectedManagedProfile.name
             } else {

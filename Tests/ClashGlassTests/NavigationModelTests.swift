@@ -84,6 +84,50 @@ import Testing
     #expect(traditional.text(.poweredByMihomo) == "由 Mihomo 驅動")
 }
 
+@Test func profileHealthFilterMatchesValidationStates() {
+    let valid = ProfileValidationState.valid()
+    let invalid = ProfileValidationState.invalid("bad config")
+
+    #expect(ProfileHealthFilter.all.matches(.notValidated))
+    #expect(ProfileHealthFilter.all.matches(.checking))
+    #expect(ProfileHealthFilter.all.matches(valid))
+    #expect(ProfileHealthFilter.all.matches(invalid))
+
+    #expect(ProfileHealthFilter.needsFix.matches(invalid))
+    #expect(!ProfileHealthFilter.needsFix.matches(valid))
+    #expect(ProfileHealthFilter.notChecked.matches(.notValidated))
+    #expect(ProfileHealthFilter.notChecked.matches(.checking))
+    #expect(!ProfileHealthFilter.notChecked.matches(valid))
+    #expect(ProfileHealthFilter.valid.matches(valid))
+    #expect(!ProfileHealthFilter.valid.matches(invalid))
+}
+
+@Test func logLevelFilterMatchesCommonMihomoLevels() {
+    #expect(LogLevelFilter.all.matches("info"))
+    #expect(LogLevelFilter.errors.matches("error"))
+    #expect(LogLevelFilter.errors.matches("fatal"))
+    #expect(!LogLevelFilter.errors.matches("warning"))
+    #expect(LogLevelFilter.warnings.matches("warn"))
+    #expect(LogLevelFilter.warnings.matches("warning"))
+    #expect(LogLevelFilter.info.matches("Info"))
+    #expect(LogLevelFilter.debug.matches("debug"))
+}
+
+@Test func proxyNodeFilterFindsSelectedUntestedAndSlowNodes() {
+    let selected = ProxyNode(name: "Japan", region: "JP", latency: 80, isSelected: true)
+    let untested = ProxyNode(name: "Singapore", region: "SG", latency: nil, isSelected: false)
+    let slow = ProxyNode(name: "US", region: "US", latency: 480, isSelected: false)
+    let group = ProxyNode(name: "Auto", region: "Proxy", latency: nil, isSelected: false, isGroup: true)
+
+    #expect(ProxyNodeFilter.all.matches(selected))
+    #expect(ProxyNodeFilter.selected.matches(selected))
+    #expect(!ProxyNodeFilter.selected.matches(untested))
+    #expect(ProxyNodeFilter.untested.matches(untested))
+    #expect(!ProxyNodeFilter.untested.matches(group))
+    #expect(ProxyNodeFilter.slow.matches(slow))
+    #expect(!ProxyNodeFilter.slow.matches(selected))
+}
+
 @Test func systemAppearanceResolvesFromTheLiveMacOSScheme() {
     #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .light) == .light)
     #expect(AppAppearance.system.resolvedColorScheme(systemColorScheme: .dark) == .dark)
@@ -305,7 +349,45 @@ import Testing
     #expect(!idle.showsSelectionBackground)
     #expect(idle.scale == 1)
     #expect(!hovered.showsSelectionBackground)
-    #expect(hovered.scale == 1.08)
+    #expect(hovered.scale == 1)
+}
+
+@Test func railItemsUseQuietHoverWithoutLayoutMotion() {
+    let dashboard = RailItem.section(.dashboard)
+    let profiles = RailItem.section(.profiles)
+    let selected = RailItemPresentation(
+        item: dashboard,
+        selectedSection: .dashboard,
+        hoveredItem: nil,
+        reduceMotion: false
+    )
+    let hovered = RailItemPresentation(
+        item: profiles,
+        selectedSection: .dashboard,
+        hoveredItem: profiles,
+        reduceMotion: false
+    )
+    let reducedHover = RailItemPresentation(
+        item: profiles,
+        selectedSection: .dashboard,
+        hoveredItem: profiles,
+        reduceMotion: true
+    )
+
+    #expect(selected.iconScale == 1)
+    #expect(selected.horizontalOffset == 0)
+    #expect(!selected.showsHoverBackground)
+    #expect(hovered.showsHoverBackground)
+    #expect(hovered.scale == 1)
+    #expect(hovered.iconScale == 1.035)
+    #expect(hovered.horizontalOffset == 0)
+    #expect(hovered.verticalOffset == 0)
+    #expect(hovered.shadowOpacity == 0)
+    #expect(hovered.selectionGlowOpacity == 0.08)
+    #expect(reducedHover.scale == 1)
+    #expect(reducedHover.iconScale == 1)
+    #expect(reducedHover.horizontalOffset == 0)
+    #expect(reducedHover.showsHoverBackground)
 }
 
 @Test func railSelectionFollowsEveryNavigationEntryPoint() {

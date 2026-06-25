@@ -66,11 +66,15 @@ struct RailHoverState {
 
 struct RailItemPresentation {
     let showsSelectionBackground: Bool
+    let showsHoverBackground: Bool
     let isHovered: Bool
     let scale: Double
+    let iconScale: Double
+    let horizontalOffset: Double
     let verticalOffset: Double
     let brightness: Double
     let shadowOpacity: Double
+    let selectionGlowOpacity: Double
 
     init(
         item: RailItem,
@@ -78,12 +82,28 @@ struct RailItemPresentation {
         hoveredItem: RailItem?,
         reduceMotion: Bool
     ) {
-        showsSelectionBackground = item == RailSelectionResolver.item(for: selectedSection)
-
+        let isSelected = item == RailSelectionResolver.item(for: selectedSection)
+        showsSelectionBackground = isSelected
         isHovered = hoveredItem == item
-        scale = isHovered && !reduceMotion ? 1.08 : 1
-        verticalOffset = isHovered && !reduceMotion ? -1.5 : 0
-        brightness = isHovered ? 0.025 : 0
-        shadowOpacity = isHovered && !reduceMotion ? 0.12 : 0
+        showsHoverBackground = isHovered && !isSelected
+
+        scale = 1
+        if reduceMotion {
+            iconScale = 1
+            horizontalOffset = 0
+        } else if isHovered {
+            iconScale = 1.035
+            horizontalOffset = 0
+        } else if isSelected {
+            iconScale = 1
+            horizontalOffset = 0
+        } else {
+            iconScale = 1
+            horizontalOffset = 0
+        }
+        verticalOffset = 0
+        brightness = isHovered ? 0.012 : 0
+        shadowOpacity = 0
+        selectionGlowOpacity = isHovered ? 0.08 : isSelected ? 0.075 : 0
     }
 }

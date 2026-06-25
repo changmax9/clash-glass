@@ -22,25 +22,41 @@ struct ConnectionsView: View {
                 },
             ]
         ) {
-            if filteredConnections.isEmpty {
-                EmptyGlassState(title: store.text(.noConnections), symbol: "network.slash")
-            } else {
-                GlassCard(radius: 16, padding: 0) {
-                    VStack(spacing: 0) {
-                        ConnectionHeader(language: store.language)
-                        Divider().opacity(0.16)
-                        ForEach(filteredConnections) { connection in
-                            ConnectionRow(
-                                connection: connection,
-                                showsBlock: true,
-                                closeTitle: store.text(.closeConnection)
-                            ) {
-                                Task {
-                                    await store.closeConnection(connection)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    StatusChip(
+                        text: "\(store.connections.count) \(store.text(.connections))",
+                        symbol: "network"
+                    )
+                    if filteredConnections.count != store.connections.count {
+                        StatusChip(
+                            text: "\(filteredConnections.count) \(store.text(.search))",
+                            symbol: "line.3.horizontal.decrease.circle"
+                        )
+                    }
+                    Spacer()
+                }
+
+                if filteredConnections.isEmpty {
+                    EmptyGlassState(title: store.text(.noConnections), symbol: "network.slash")
+                } else {
+                    GlassCard(radius: 16, padding: 0) {
+                        VStack(spacing: 0) {
+                            ConnectionHeader(language: store.language)
+                            Divider().opacity(0.16)
+                            ForEach(filteredConnections) { connection in
+                                ConnectionRow(
+                                    connection: connection,
+                                    showsBlock: true,
+                                    closeTitle: store.text(.closeConnection)
+                                ) {
+                                    Task {
+                                        await store.closeConnection(connection)
+                                    }
                                 }
-                            }
-                            if connection.id != filteredConnections.last?.id {
-                                Divider().padding(.leading, 16).opacity(0.12)
+                                if connection.id != filteredConnections.last?.id {
+                                    Divider().padding(.leading, 16).opacity(0.12)
+                                }
                             }
                         }
                     }

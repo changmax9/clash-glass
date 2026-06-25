@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfilesView: View {
     @Bindable var store: AppStore
     @State private var query = ""
+    @State private var healthFilter: ProfileHealthFilter = .all
     @State private var renameProfileID: ManagedProfile.ID?
     @State private var renameDraft = ""
     @State private var showsProfileRename = false
@@ -25,53 +26,64 @@ struct ProfilesView: View {
                 },
             ]
         ) {
-            if filteredProfiles.isEmpty {
+            if store.managedProfiles.isEmpty {
                 GlassCard(radius: 16, padding: 26) {
                     VStack(spacing: 14) {
                         Image(systemName: "doc.badge.plus")
                             .font(.system(size: 30, weight: .bold))
                             .foregroundStyle(.secondary)
-                        Text(
-                            store.managedProfiles.isEmpty
-                                ? store.text(.importConfiguration)
-                                : store.text(.noMatchingProfiles)
-                        )
+                        Text(store.text(.importConfiguration))
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundStyle(.secondary)
-                        if store.managedProfiles.isEmpty {
-                            LiquidActionButton(title: store.text(.importConfiguration), symbol: "square.and.arrow.down") {
-                                importYAML()
-                            }
+                        LiquidActionButton(title: store.text(.importConfiguration), symbol: "square.and.arrow.down") {
+                            importYAML()
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: 210)
                 }
             } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 270), spacing: 14)], spacing: 14) {
-                    ForEach(filteredProfiles) { profile in
-                        ManagedProfileCard(
-                            profile: profile,
-                            isSelected: profile.id == store.selectedManagedProfileID,
-                            isRunning: profile.id == store.selectedManagedProfileID && store.isStarted,
-                            language: store.language,
-                            select: {
-                                Task { await store.selectManagedProfile(profile.id) }
-                            },
-                            validate: {
-                                Task { await store.validateManagedProfile(profile.id) }
-                            },
-                            reveal: {
-                                ConfigurationFilePanel.reveal(profile.managedConfigURL)
-                            },
-                            rename: {
-                                renameProfileID = profile.id
-                                renameDraft = profile.name
-                                showsProfileRename = true
-                            },
-                            delete: {
-                                profilePendingDeletion = profile
-                            }
+                VStack(alignment: .leading, spacing: 14) {
+                    PillSegment(
+                        values: ProfileHealthFilter.allCases,
+                        selection: $healthFilter
+                    ) { filter in
+                        filter.title(language: store.language)
+                    }
+
+                    if filteredProfiles.isEmpty {
+                        EmptyGlassState(
+                            title: store.text(.noMatchingProfiles),
+                            symbol: "line.3.horizontal.decrease.circle"
                         )
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 270), spacing: 14)], spacing: 14) {
+                            ForEach(filteredProfiles) { profile in
+                                ManagedProfileCard(
+                                    profile: profile,
+                                    isSelected: profile.id == store.selectedManagedProfileID,
+                                    isRunning: profile.id == store.selectedManagedProfileID && store.isStarted,
+                                    validationState: store.validationState(for: profile.id),
+                                    language: store.language,
+                                    select: {
+                                        Task { await store.selectManagedProfile(profile.id) }
+                                    },
+                                    validate: {
+                                        Task { await store.validateManagedProfile(profile.id) }
+                                    },
+                                    reveal: {
+                                        ConfigurationFilePanel.reveal(profile.managedConfigURL)
+                                    },
+                                    rename: {
+                                        renameProfileID = profile.id
+                                        renameDraft = profile.name
+                                        showsProfileRename = true
+                                    },
+                                    delete: {
+                                        profilePendingDeletion = profile
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -119,12 +131,13 @@ struct ProfilesView: View {
 
     private var filteredProfiles: [ManagedProfile] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return store.managedProfiles
-        }
         return store.managedProfiles.filter {
-            $0.name.localizedCaseInsensitiveContains(trimmed)
-            || $0.managedConfigURL.path.localizedCaseInsensitiveContains(trimmed)
+            let validationState = store.validationState(for: $0.id)
+            let matchesHealth = healthFilter.matches(validationState)
+            let matchesQuery = trimmed.isEmpty
+                || $0.name.localizedCaseInsensitiveContains(trimmed)
+                || $0.managedConfigURL.path.localizedCaseInsensitiveContains(trimmed)
+            return matchesHealth && matchesQuery
         }
     }
 
@@ -142,6 +155,7 @@ private struct ManagedProfileCard: View {
     let profile: ManagedProfile
     let isSelected: Bool
     let isRunning: Bool
+    let validationState: ProfileValidationState
     let language: AppLanguage
     let select: () -> Void
     let validate: () -> Void
@@ -178,6 +192,11 @@ private struct ManagedProfileCard: View {
                     Text(language.text(.managedYAML))
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.secondaryText)
+                    ProfileValidationLine(
+                        state: validationState,
+                        language: language,
+                        palette: palette
+                    )
                     Text(profile.importedAt, style: .relative)
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(palette.tertiaryText)
@@ -198,7 +217,52 @@ private struct ManagedProfileCard: View {
                     LiquidIconButton(title: language.text(.delete), symbol: "trash", tint: .red.opacity(0.18), size: 28, action: delete)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 142, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
+        }
+    }
+}
+
+private struct ProfileValidationLine: View {
+    let state: ProfileValidationState
+    let language: AppLanguage
+    let palette: GlassPalette
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemName: state.symbol)
+                    .font(.system(size: 11, weight: .bold))
+                Text(state.title(language: language))
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                if let checkedAt = state.checkedAt {
+                    Text(checkedAt, style: .relative)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.tertiaryText)
+                }
+            }
+            .foregroundStyle(tint)
+            .lineLimit(1)
+
+            if let message = state.message {
+                Text(message)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.red.opacity(0.86))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+            }
+        }
+    }
+
+    private var tint: Color {
+        switch state.kind {
+        case .notValidated:
+            palette.tertiaryText
+        case .checking:
+            palette.brown
+        case .valid:
+            palette.green
+        case .invalid:
+            .red
         }
     }
 }

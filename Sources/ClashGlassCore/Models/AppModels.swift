@@ -147,6 +147,139 @@ public enum DashboardWidgetKind: String, CaseIterable, Identifiable, Sendable {
     ]
 }
 
+public enum ProfileValidationKind: String, Sendable {
+    case notValidated
+    case checking
+    case valid
+    case invalid
+}
+
+public struct ProfileValidationState: Equatable, Sendable {
+    public let kind: ProfileValidationKind
+    public let message: String?
+    public let checkedAt: Date?
+
+    public static let notValidated = ProfileValidationState(
+        kind: .notValidated,
+        message: nil,
+        checkedAt: nil
+    )
+
+    public static let checking = ProfileValidationState(
+        kind: .checking,
+        message: nil,
+        checkedAt: nil
+    )
+
+    public static func valid(checkedAt: Date = Date()) -> ProfileValidationState {
+        ProfileValidationState(kind: .valid, message: nil, checkedAt: checkedAt)
+    }
+
+    public static func invalid(
+        _ message: String,
+        checkedAt: Date = Date()
+    ) -> ProfileValidationState {
+        ProfileValidationState(kind: .invalid, message: message, checkedAt: checkedAt)
+    }
+
+    public func title(language: AppLanguage) -> String {
+        switch kind {
+        case .notValidated:
+            language.text(.notValidated)
+        case .checking:
+            language.text(.checking)
+        case .valid:
+            language.text(.valid)
+        case .invalid:
+            language.text(.invalid)
+        }
+    }
+
+    public var symbol: String {
+        switch kind {
+        case .notValidated:
+            "shield"
+        case .checking:
+            "arrow.triangle.2.circlepath"
+        case .valid:
+            "checkmark.shield.fill"
+        case .invalid:
+            "exclamationmark.triangle.fill"
+        }
+    }
+}
+
+enum ProfileHealthFilter: String, CaseIterable, Identifiable, Sendable {
+    case all
+    case needsFix
+    case notChecked
+    case valid
+
+    var id: Self { self }
+
+    func matches(_ state: ProfileValidationState) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .needsFix:
+            state.kind == .invalid
+        case .notChecked:
+            state.kind == .notValidated || state.kind == .checking
+        case .valid:
+            state.kind == .valid
+        }
+    }
+
+    func title(language: AppLanguage) -> String {
+        switch self {
+        case .all:
+            language.text(.allProfiles)
+        case .needsFix:
+            language.text(.invalid)
+        case .notChecked:
+            language.text(.notValidated)
+        case .valid:
+            language.text(.valid)
+        }
+    }
+}
+
+enum LogLevelFilter: String, CaseIterable, Identifiable, Sendable {
+    case all
+    case errors
+    case warnings
+    case info
+    case debug
+
+    var id: Self { self }
+
+    func matches(_ level: String) -> Bool {
+        let normalized = level.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return switch self {
+        case .all:
+            true
+        case .errors:
+            normalized == "error" || normalized == "fatal"
+        case .warnings:
+            normalized == "warning" || normalized == "warn"
+        case .info:
+            normalized == "info"
+        case .debug:
+            normalized == "debug"
+        }
+    }
+
+    func title(language: AppLanguage) -> String {
+        switch self {
+        case .all: language.text(.allLogs)
+        case .errors: language.text(.errors)
+        case .warnings: language.text(.warnings)
+        case .info: language.text(.info)
+        case .debug: language.text(.debug)
+        }
+    }
+}
+
 enum ProxyGroupKind: String, Codable, Sendable {
     case selector
     case urlTest
@@ -186,6 +319,43 @@ struct ProxyNode: Identifiable, Equatable {
     var latency: Int?
     var isSelected: Bool
     var isGroup: Bool = false
+}
+
+enum ProxyNodeFilter: String, CaseIterable, Identifiable, Sendable {
+    case all
+    case selected
+    case untested
+    case slow
+
+    static let slowLatencyThreshold = 350
+
+    var id: Self { self }
+
+    func matches(_ node: ProxyNode) -> Bool {
+        return switch self {
+        case .all:
+            true
+        case .selected:
+            node.isSelected
+        case .untested:
+            node.latency == nil && !node.isGroup && isConcrete(node)
+        case .slow:
+            (node.latency ?? 0) >= Self.slowLatencyThreshold && !node.isGroup
+        }
+    }
+
+    func title(language: AppLanguage) -> String {
+        switch self {
+        case .all: language.text(.allNodes)
+        case .selected: language.text(.selectedOnly)
+        case .untested: language.text(.untested)
+        case .slow: language.text(.slowNodes)
+        }
+    }
+
+    private func isConcrete(_ node: ProxyNode) -> Bool {
+        !["DIRECT", "REJECT", "PASS", "COMPATIBLE"].contains(node.name.uppercased())
+    }
 }
 
 struct ProxyGroup: Identifiable {

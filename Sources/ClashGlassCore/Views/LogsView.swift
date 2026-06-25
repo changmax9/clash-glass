@@ -3,6 +3,7 @@ import SwiftUI
 struct LogsView: View {
     @Bindable var store: AppStore
     @State private var query = ""
+    @State private var levelFilter: LogLevelFilter = .all
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -23,15 +24,26 @@ struct LogsView: View {
             ]
         ) {
             let filtered = filteredLogs
-            if filtered.isEmpty {
-                EmptyGlassState(title: store.text(.noLogs), symbol: "terminal")
-            } else {
-                GlassCard(radius: 16, padding: 0) {
-                    VStack(spacing: 0) {
-                        ForEach(filtered) { entry in
-                            LogRow(entry: entry)
-                            if entry.id != filtered.last?.id {
-                                Divider().padding(.leading, 96).opacity(0.12)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    PillSegment(
+                        values: LogLevelFilter.allCases,
+                        selection: $levelFilter
+                    ) { $0.title(language: store.language) }
+                    Spacer()
+                    StatusChip(text: "\(filtered.count)", symbol: "terminal")
+                }
+
+                if filtered.isEmpty {
+                    EmptyGlassState(title: store.text(.noLogs), symbol: "terminal")
+                } else {
+                    GlassCard(radius: 16, padding: 0) {
+                        VStack(spacing: 0) {
+                            ForEach(filtered) { entry in
+                                LogRow(entry: entry)
+                                if entry.id != filtered.last?.id {
+                                    Divider().padding(.leading, 96).opacity(0.12)
+                                }
                             }
                         }
                     }
@@ -42,12 +54,12 @@ struct LogsView: View {
 
     private var filteredLogs: [LogEntry] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return store.logs
-        }
         return store.logs.filter {
-            $0.message.localizedCaseInsensitiveContains(trimmed)
-            || $0.level.localizedCaseInsensitiveContains(trimmed)
+            let matchesLevel = levelFilter.matches($0.level)
+            let matchesQuery = trimmed.isEmpty
+                || $0.message.localizedCaseInsensitiveContains(trimmed)
+                || $0.level.localizedCaseInsensitiveContains(trimmed)
+            return matchesLevel && matchesQuery
         }
     }
 }

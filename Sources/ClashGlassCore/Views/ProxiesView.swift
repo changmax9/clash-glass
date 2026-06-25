@@ -11,6 +11,7 @@ struct ProxiesView: View {
     @Bindable var store: AppStore
     @State private var query = ""
     @State private var displayMode: ProxiesDisplayMode = .tab
+    @State private var nodeFilter: ProxyNodeFilter = .all
     @State private var expansionState = ProxyGroupExpansionState()
     @Environment(\.colorScheme) private var colorScheme
 
@@ -21,29 +22,38 @@ struct ProxiesView: View {
             actions: toolbarActions
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    PillSegment(
-                        values: ProxiesDisplayMode.allCases,
-                        selection: $displayMode
-                    ) { displayModeTitle($0) }
-                    Spacer()
-                    if store.isLatencyTesting {
-                        ProgressView(value: store.latencyTestProgress.fraction)
-                            .progressViewStyle(.linear)
-                            .frame(width: 72)
-                        StatusChip(
-                            text: store.latencyTestProgress.text,
-                            symbol: "waveform.path.ecg"
-                        )
-                    } else {
-                        StatusChip(
-                            text: "\(filteredGroups.reduce(0) { $0 + $1.nodes.count }) \(store.text(.nodes))",
-                            symbol: "point.3.connected.trianglepath.dotted"
-                        )
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        PillSegment(
+                            values: ProxiesDisplayMode.allCases,
+                            selection: $displayMode
+                        ) { displayModeTitle($0) }
+                        Spacer()
+                        if store.isLatencyTesting {
+                            ProgressView(value: store.latencyTestProgress.fraction)
+                                .progressViewStyle(.linear)
+                                .frame(width: 72)
+                            StatusChip(
+                                text: store.latencyTestProgress.text,
+                                symbol: "waveform.path.ecg"
+                            )
+                        } else {
+                            StatusChip(
+                                text: "\(filteredGroups.reduce(0) { $0 + $1.nodes.count }) \(store.text(.nodes))",
+                                symbol: "point.3.connected.trianglepath.dotted"
+                            )
+                        }
                     }
+
+                    PillSegment(
+                        values: ProxyNodeFilter.allCases,
+                        selection: $nodeFilter
+                    ) { $0.title(language: store.language) }
                 }
 
-                if displayMode == .tab {
+                if filteredGroups.isEmpty {
+                    EmptyGlassState(title: store.text(.noProxyNodes), symbol: "point.3.connected.trianglepath.dotted")
+                } else if displayMode == .tab {
                     tabContent
                 } else {
                     listContent
@@ -90,14 +100,15 @@ struct ProxiesView: View {
 
     private var filteredGroups: [ProxyGroup] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return store.proxyGroups
-        }
         return store.proxyGroups.compactMap { group in
-            let nodes = group.nodes.filter {
-                $0.name.localizedCaseInsensitiveContains(trimmed)
-                || $0.region.localizedCaseInsensitiveContains(trimmed)
+            let groupMatchesQuery = trimmed.isEmpty
                 || group.name.localizedCaseInsensitiveContains(trimmed)
+            let nodes = group.nodes.filter {
+                let matchesNodeFilter = nodeFilter.matches($0)
+                let matchesQuery = groupMatchesQuery
+                    || $0.name.localizedCaseInsensitiveContains(trimmed)
+                    || $0.region.localizedCaseInsensitiveContains(trimmed)
+                return matchesNodeFilter && matchesQuery
             }
             guard !nodes.isEmpty else { return nil }
             return ProxyGroup(

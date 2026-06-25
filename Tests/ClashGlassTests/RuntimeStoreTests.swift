@@ -97,6 +97,86 @@ import Testing
     #expect(store.isTunEnabled == false)
     #expect(store.controllerURL.absoluteString == "http://127.0.0.1:9191")
     #expect(store.lastErrorMessage == nil)
+    #expect(store.validationState(for: try #require(store.selectedManagedProfileID)).kind == .valid)
+}
+
+@MainActor
+@Test func appStoreStoresPerProfileValidationFailures() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let sourceURL = directory.appendingPathComponent("broken.yaml")
+    let executableURL = directory.appendingPathComponent("fake-mihomo")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try "mixed-port: 7890\nrules:\n  - MATCH,DIRECT\n"
+        .write(to: sourceURL, atomically: true, encoding: .utf8)
+    try """
+    #!/bin/sh
+    if [ "$1" = "-t" ]; then
+      echo 'profile rejected' >&2
+      exit 1
+    fi
+    exit 0
+    """.write(to: executableURL, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executableURL.path)
+
+    let repository = ManagedProfileRepository(rootURL: directory.appendingPathComponent("Managed"))
+    let profile = try await repository.importProfile(from: sourceURL) { _ in .success }
+    let store = AppStore(
+        coreService: MihomoCoreService(coreBinaryURL: executableURL),
+        profileRepository: repository
+    )
+
+    await store.validateManagedProfile(profile.id)
+
+    #expect(store.validationState(for: profile.id).kind == .invalid)
+    #expect(store.validationState(for: profile.id).message == "profile rejected")
+    #expect(store.lastErrorMessage == "profile rejected")
+}
+
+@MainActor
+@Test func appStoreValidateAllProfilesRecordsEveryResult() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let validURL = directory.appendingPathComponent("valid.yaml")
+    let brokenURL = directory.appendingPathComponent("broken.yaml")
+    let executableURL = directory.appendingPathComponent("fake-mihomo")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try "mixed-port: 7890\nrules:\n  - MATCH,DIRECT\n"
+        .write(to: validURL, atomically: true, encoding: .utf8)
+    try "mixed-port: 7891\nbroken-marker: true\nrules:\n  - MATCH,DIRECT\n"
+        .write(to: brokenURL, atomically: true, encoding: .utf8)
+    try """
+    #!/bin/sh
+    config=""
+    while [ "$#" -gt 0 ]; do
+      if [ "$1" = "-f" ]; then
+        shift
+        config="$1"
+      fi
+      shift
+    done
+    if grep -q 'broken-marker' "$config"; then
+      echo 'broken profile rejected' >&2
+      exit 1
+    fi
+    exit 0
+    """.write(to: executableURL, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executableURL.path)
+
+    let repository = ManagedProfileRepository(rootURL: directory.appendingPathComponent("Managed"))
+    let validProfile = try await repository.importProfile(from: validURL, name: "Valid") { _ in .success }
+    let brokenProfile = try await repository.importProfile(from: brokenURL, name: "Broken") { _ in .success }
+    let store = AppStore(
+        coreService: MihomoCoreService(coreBinaryURL: executableURL),
+        profileRepository: repository
+    )
+
+    await store.validateAllManagedProfiles()
+
+    #expect(store.validationState(for: validProfile.id).kind == .valid)
+    #expect(store.validationState(for: brokenProfile.id).kind == .invalid)
+    #expect(store.validationState(for: brokenProfile.id).message == "broken profile rejected")
+    #expect(store.lastErrorMessage == "Broken: broken profile rejected")
 }
 
 @MainActor

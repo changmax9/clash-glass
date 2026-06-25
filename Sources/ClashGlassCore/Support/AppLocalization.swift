@@ -70,16 +70,26 @@ public enum AppString: String, CaseIterable, Sendable {
     case clear
     case export
     case noLogs
+    case allLogs
+    case errors
+    case warnings
+    case info
+    case debug
     case stopped
     case connected
     case coreRunning
     case nodes
+    case allNodes
+    case selectedOnly
+    case untested
+    case slowNodes
     case noProxyNodes
     case validateAll
     case openManagedFolder
     case importYAML
     case importConfiguration
     case noMatchingProfiles
+    case allProfiles
     case deleteProfile
     case managedYAML
     case running
@@ -88,6 +98,10 @@ public enum AppString: String, CaseIterable, Sendable {
     case selected
     case use
     case validate
+    case notValidated
+    case checking
+    case valid
+    case invalid
     case revealInFinder
     case delete
     case delayTest
@@ -299,13 +313,19 @@ enum AppLocalization {
             .closeConnection: "Close Connection", .stopAutoScroll: "Stop Auto Scroll",
             .scrollToTop: "Scroll to Top", .noRequests: "No Requests", .reload: "Reload",
             .openFolder: "Open Folder", .ready: "Ready", .clear: "Clear", .export: "Export",
-            .noLogs: "No Logs", .stopped: "Stopped", .connected: "Connected",
-            .coreRunning: "Core Running", .nodes: "nodes", .noProxyNodes: "No Proxy Nodes Available",
+            .noLogs: "No Logs", .allLogs: "All", .errors: "Errors", .warnings: "Warnings",
+            .info: "Info", .debug: "Debug", .stopped: "Stopped", .connected: "Connected",
+            .coreRunning: "Core Running", .nodes: "nodes", .allNodes: "All",
+            .selectedOnly: "Selected", .untested: "Untested", .slowNodes: "Slow",
+            .noProxyNodes: "No Proxy Nodes Available",
             .validateAll: "Validate All", .openManagedFolder: "Open Managed Folder",
             .importYAML: "Import YAML", .importConfiguration: "Import Configuration",
-            .noMatchingProfiles: "No Matching Profiles", .deleteProfile: "Delete Profile",
+            .noMatchingProfiles: "No Matching Profiles", .allProfiles: "All",
+            .deleteProfile: "Delete Profile",
             .managedYAML: "Managed YAML", .running: "Running", .current: "Current",
             .managed: "Managed", .selected: "Selected", .use: "Use", .validate: "Validate",
+            .notValidated: "Not Checked", .checking: "Checking", .valid: "Valid",
+            .invalid: "Needs Fix",
             .revealInFinder: "Reveal in Finder", .delete: "Delete", .delayTest: "Delay Test",
             .providers: "Providers", .automatic: "Automatic", .collapse: "Collapse",
             .expand: "Expand", .addRule: "Add Rule", .saving: "Saving",
@@ -355,13 +375,18 @@ enum AppLocalization {
             .host: "主机", .chain: "链路", .closeConnection: "关闭连接",
             .stopAutoScroll: "停止自动滚动", .scrollToTop: "滚动到顶部", .noRequests: "暂无请求",
             .reload: "重新加载", .openFolder: "打开文件夹", .ready: "就绪", .clear: "清空",
-            .export: "导出", .noLogs: "暂无日志", .stopped: "已停止", .connected: "已连接",
-            .coreRunning: "核心运行中", .nodes: "个节点", .noProxyNodes: "没有可用代理节点",
+            .export: "导出", .noLogs: "暂无日志", .allLogs: "全部", .errors: "错误",
+            .warnings: "警告", .info: "信息", .debug: "调试", .stopped: "已停止",
+            .connected: "已连接",
+            .coreRunning: "核心运行中", .nodes: "个节点", .allNodes: "全部",
+            .selectedOnly: "已选", .untested: "未测速", .slowNodes: "慢节点",
+            .noProxyNodes: "没有可用代理节点",
             .validateAll: "全部验证", .openManagedFolder: "打开托管文件夹", .importYAML: "导入 YAML",
             .importConfiguration: "导入配置", .noMatchingProfiles: "没有匹配的配置",
-            .deleteProfile: "删除配置", .managedYAML: "托管 YAML", .running: "运行中",
+            .allProfiles: "全部", .deleteProfile: "删除配置", .managedYAML: "托管 YAML", .running: "运行中",
             .current: "当前", .managed: "已托管", .selected: "已选择", .use: "使用",
             .validate: "验证", .revealInFinder: "在访达中显示", .delete: "删除",
+            .notValidated: "未检查", .checking: "检查中", .valid: "有效", .invalid: "需修复",
             .delayTest: "延迟测试", .providers: "提供商", .automatic: "自动",
             .collapse: "收起", .expand: "展开", .addRule: "添加规则", .saving: "保存中",
             .domainRouting: "域名路由", .deleteRule: "删除规则",
@@ -410,13 +435,18 @@ enum AppLocalization {
             .host: "主機", .chain: "鏈路", .closeConnection: "關閉連線",
             .stopAutoScroll: "停止自動捲動", .scrollToTop: "捲動到頂端", .noRequests: "暫無請求",
             .reload: "重新載入", .openFolder: "開啟資料夾", .ready: "就緒", .clear: "清除",
-            .export: "匯出", .noLogs: "暫無日誌", .stopped: "已停止", .connected: "已連線",
-            .coreRunning: "核心執行中", .nodes: "個節點", .noProxyNodes: "沒有可用代理節點",
+            .export: "匯出", .noLogs: "暫無日誌", .allLogs: "全部", .errors: "錯誤",
+            .warnings: "警告", .info: "資訊", .debug: "偵錯", .stopped: "已停止",
+            .connected: "已連線",
+            .coreRunning: "核心執行中", .nodes: "個節點", .allNodes: "全部",
+            .selectedOnly: "已選", .untested: "未測速", .slowNodes: "慢節點",
+            .noProxyNodes: "沒有可用代理節點",
             .validateAll: "全部驗證", .openManagedFolder: "開啟託管資料夾", .importYAML: "匯入 YAML",
             .importConfiguration: "匯入設定", .noMatchingProfiles: "沒有符合的設定檔",
-            .deleteProfile: "刪除設定檔", .managedYAML: "託管 YAML", .running: "執行中",
+            .allProfiles: "全部", .deleteProfile: "刪除設定檔", .managedYAML: "託管 YAML", .running: "執行中",
             .current: "目前", .managed: "已託管", .selected: "已選取", .use: "使用",
             .validate: "驗證", .revealInFinder: "在 Finder 中顯示", .delete: "刪除",
+            .notValidated: "未檢查", .checking: "檢查中", .valid: "有效", .invalid: "需修復",
             .delayTest: "延遲測試", .providers: "供應商", .automatic: "自動",
             .collapse: "收合", .expand: "展開", .addRule: "新增規則", .saving: "儲存中",
             .domainRouting: "網域路由", .deleteRule: "刪除規則",
@@ -466,13 +496,18 @@ enum AppLocalization {
             .host: "ホスト", .chain: "チェーン", .closeConnection: "接続を閉じる",
             .stopAutoScroll: "自動スクロールを停止", .scrollToTop: "先頭へ移動", .noRequests: "リクエストなし",
             .reload: "再読み込み", .openFolder: "フォルダを開く", .ready: "準備完了", .clear: "消去",
-            .export: "書き出す", .noLogs: "ログなし", .stopped: "停止中", .connected: "接続済み",
-            .coreRunning: "コア実行中", .nodes: "ノード", .noProxyNodes: "利用可能なプロキシノードがありません",
+            .export: "書き出す", .noLogs: "ログなし", .allLogs: "すべて", .errors: "エラー",
+            .warnings: "警告", .info: "情報", .debug: "デバッグ", .stopped: "停止中",
+            .connected: "接続済み",
+            .coreRunning: "コア実行中", .nodes: "ノード", .allNodes: "すべて",
+            .selectedOnly: "選択済み", .untested: "未測定", .slowNodes: "低速",
+            .noProxyNodes: "利用可能なプロキシノードがありません",
             .validateAll: "すべて検証", .openManagedFolder: "管理フォルダを開く", .importYAML: "YAML を読み込む",
             .importConfiguration: "設定を読み込む", .noMatchingProfiles: "一致するプロファイルがありません",
-            .deleteProfile: "プロファイルを削除", .managedYAML: "管理対象 YAML", .running: "実行中",
+            .allProfiles: "すべて", .deleteProfile: "プロファイルを削除", .managedYAML: "管理対象 YAML", .running: "実行中",
             .current: "現在", .managed: "管理対象", .selected: "選択済み", .use: "使用",
             .validate: "検証", .revealInFinder: "Finder に表示", .delete: "削除",
+            .notValidated: "未確認", .checking: "確認中", .valid: "有効", .invalid: "修正が必要",
             .delayTest: "遅延テスト", .providers: "プロバイダ", .automatic: "自動",
             .collapse: "折りたたむ", .expand: "展開", .addRule: "ルールを追加", .saving: "保存中",
             .domainRouting: "ドメインルーティング", .deleteRule: "ルールを削除",
@@ -523,14 +558,21 @@ enum AppLocalization {
             .closeConnection: "Fermer la connexion", .stopAutoScroll: "Arrêter le défilement automatique",
             .scrollToTop: "Aller en haut", .noRequests: "Aucune requête", .reload: "Recharger",
             .openFolder: "Ouvrir le dossier", .ready: "Prêt", .clear: "Effacer", .export: "Exporter",
-            .noLogs: "Aucun journal", .stopped: "Arrêté", .connected: "Connecté",
-            .coreRunning: "Moteur actif", .nodes: "nœuds", .noProxyNodes: "Aucun nœud proxy disponible",
+            .noLogs: "Aucun journal", .allLogs: "Tous", .errors: "Erreurs",
+            .warnings: "Alertes", .info: "Info", .debug: "Debug", .stopped: "Arrêté",
+            .connected: "Connecté",
+            .coreRunning: "Moteur actif", .nodes: "nœuds", .allNodes: "Tous",
+            .selectedOnly: "Sélectionnés", .untested: "Non testés", .slowNodes: "Lents",
+            .noProxyNodes: "Aucun nœud proxy disponible",
             .validateAll: "Tout valider", .openManagedFolder: "Ouvrir le dossier géré",
             .importYAML: "Importer YAML", .importConfiguration: "Importer une configuration",
-            .noMatchingProfiles: "Aucun profil correspondant", .deleteProfile: "Supprimer le profil",
+            .noMatchingProfiles: "Aucun profil correspondant", .allProfiles: "Tous",
+            .deleteProfile: "Supprimer le profil",
             .managedYAML: "YAML géré", .running: "Actif", .current: "Actuel", .managed: "Géré",
             .selected: "Sélectionné", .use: "Utiliser", .validate: "Valider",
             .revealInFinder: "Afficher dans le Finder", .delete: "Supprimer",
+            .notValidated: "Non vérifié", .checking: "Vérification", .valid: "Valide",
+            .invalid: "À corriger",
             .delayTest: "Test de latence", .providers: "Fournisseurs", .automatic: "Automatique",
             .collapse: "Réduire", .expand: "Développer", .addRule: "Ajouter une règle",
             .saving: "Enregistrement", .domainRouting: "Routage de domaine",
@@ -581,14 +623,21 @@ enum AppLocalization {
             .closeConnection: "Закрыть соединение", .stopAutoScroll: "Остановить автопрокрутку",
             .scrollToTop: "Наверх", .noRequests: "Нет запросов", .reload: "Перезагрузить",
             .openFolder: "Открыть папку", .ready: "Готово", .clear: "Очистить", .export: "Экспорт",
-            .noLogs: "Нет журналов", .stopped: "Остановлено", .connected: "Подключено",
-            .coreRunning: "Ядро работает", .nodes: "узлов", .noProxyNodes: "Нет доступных прокси-узлов",
+            .noLogs: "Нет журналов", .allLogs: "Все", .errors: "Ошибки",
+            .warnings: "Предупреждения", .info: "Инфо", .debug: "Отладка",
+            .stopped: "Остановлено", .connected: "Подключено",
+            .coreRunning: "Ядро работает", .nodes: "узлов", .allNodes: "Все",
+            .selectedOnly: "Выбрано", .untested: "Не проверено", .slowNodes: "Медленные",
+            .noProxyNodes: "Нет доступных прокси-узлов",
             .validateAll: "Проверить все", .openManagedFolder: "Открыть папку профилей",
             .importYAML: "Импорт YAML", .importConfiguration: "Импортировать конфигурацию",
-            .noMatchingProfiles: "Нет подходящих профилей", .deleteProfile: "Удалить профиль",
+            .noMatchingProfiles: "Нет подходящих профилей", .allProfiles: "Все",
+            .deleteProfile: "Удалить профиль",
             .managedYAML: "Управляемый YAML", .running: "Работает", .current: "Текущий",
             .managed: "Управляемый", .selected: "Выбран", .use: "Использовать",
             .validate: "Проверить", .revealInFinder: "Показать в Finder", .delete: "Удалить",
+            .notValidated: "Не проверено", .checking: "Проверка", .valid: "Готово",
+            .invalid: "Требует исправления",
             .delayTest: "Тест задержки", .providers: "Провайдеры", .automatic: "Автоматически",
             .collapse: "Свернуть", .expand: "Развернуть", .addRule: "Добавить правило",
             .saving: "Сохранение", .domainRouting: "Маршрутизация доменов",
@@ -639,14 +688,21 @@ enum AppLocalization {
             .closeConnection: "Cerrar conexión", .stopAutoScroll: "Detener desplazamiento automático",
             .scrollToTop: "Ir arriba", .noRequests: "Sin solicitudes", .reload: "Recargar",
             .openFolder: "Abrir carpeta", .ready: "Listo", .clear: "Borrar", .export: "Exportar",
-            .noLogs: "Sin registros", .stopped: "Detenido", .connected: "Conectado",
-            .coreRunning: "Núcleo activo", .nodes: "nodos", .noProxyNodes: "No hay nodos proxy disponibles",
+            .noLogs: "Sin registros", .allLogs: "Todos", .errors: "Errores",
+            .warnings: "Alertas", .info: "Info", .debug: "Depurar", .stopped: "Detenido",
+            .connected: "Conectado",
+            .coreRunning: "Núcleo activo", .nodes: "nodos", .allNodes: "Todos",
+            .selectedOnly: "Seleccionados", .untested: "Sin probar", .slowNodes: "Lentos",
+            .noProxyNodes: "No hay nodos proxy disponibles",
             .validateAll: "Validar todo", .openManagedFolder: "Abrir carpeta gestionada",
             .importYAML: "Importar YAML", .importConfiguration: "Importar configuración",
-            .noMatchingProfiles: "No hay perfiles coincidentes", .deleteProfile: "Eliminar perfil",
+            .noMatchingProfiles: "No hay perfiles coincidentes", .allProfiles: "Todos",
+            .deleteProfile: "Eliminar perfil",
             .managedYAML: "YAML gestionado", .running: "En ejecución", .current: "Actual",
             .managed: "Gestionado", .selected: "Seleccionado", .use: "Usar",
             .validate: "Validar", .revealInFinder: "Mostrar en Finder", .delete: "Eliminar",
+            .notValidated: "Sin comprobar", .checking: "Comprobando", .valid: "Válido",
+            .invalid: "Requiere corrección",
             .delayTest: "Prueba de latencia", .providers: "Proveedores", .automatic: "Automático",
             .collapse: "Contraer", .expand: "Expandir", .addRule: "Añadir regla",
             .saving: "Guardando", .domainRouting: "Enrutamiento de dominios",
@@ -697,14 +753,21 @@ enum AppLocalization {
             .closeConnection: "Fechar ligação", .stopAutoScroll: "Parar deslocamento automático",
             .scrollToTop: "Ir para o topo", .noRequests: "Sem pedidos", .reload: "Recarregar",
             .openFolder: "Abrir pasta", .ready: "Pronto", .clear: "Limpar", .export: "Exportar",
-            .noLogs: "Sem registos", .stopped: "Parado", .connected: "Ligado",
-            .coreRunning: "Núcleo ativo", .nodes: "nós", .noProxyNodes: "Sem nós proxy disponíveis",
+            .noLogs: "Sem registos", .allLogs: "Todos", .errors: "Erros",
+            .warnings: "Avisos", .info: "Info", .debug: "Depurar", .stopped: "Parado",
+            .connected: "Ligado",
+            .coreRunning: "Núcleo ativo", .nodes: "nós", .allNodes: "Todos",
+            .selectedOnly: "Selecionados", .untested: "Não testados", .slowNodes: "Lentos",
+            .noProxyNodes: "Sem nós proxy disponíveis",
             .validateAll: "Validar tudo", .openManagedFolder: "Abrir pasta gerida",
             .importYAML: "Importar YAML", .importConfiguration: "Importar configuração",
-            .noMatchingProfiles: "Sem perfis correspondentes", .deleteProfile: "Eliminar perfil",
+            .noMatchingProfiles: "Sem perfis correspondentes", .allProfiles: "Todos",
+            .deleteProfile: "Eliminar perfil",
             .managedYAML: "YAML gerido", .running: "Em execução", .current: "Atual",
             .managed: "Gerido", .selected: "Selecionado", .use: "Usar",
             .validate: "Validar", .revealInFinder: "Mostrar no Finder", .delete: "Eliminar",
+            .notValidated: "Não verificado", .checking: "A verificar", .valid: "Válido",
+            .invalid: "Requer correção",
             .delayTest: "Teste de latência", .providers: "Fornecedores", .automatic: "Automático",
             .collapse: "Recolher", .expand: "Expandir", .addRule: "Adicionar regra",
             .saving: "A guardar", .domainRouting: "Encaminhamento de domínios",
